@@ -1,0 +1,138 @@
+<section class="dashboard-page" *ngIf="!loading; else loadingTpl">
+  <aside class="dashboard-sidebar">
+    <div class="brand">nopCommerce Rider</div>
+    <p class="brand-sub">Rapid delivery control center</p>
+    <button class="nav-chip" (click)="backToStore()">Store Home</button>
+    <button class="nav-chip" (click)="manualRefresh()" [disabled]="refreshing">{{ refreshing ? 'Refreshing...' : 'Refresh Data' }}</button>
+    <button class="nav-chip danger" (click)="logout()">Logout</button>
+    <p class="updated" *ngIf="lastUpdated">Updated at {{ lastUpdated }}</p>
+  </aside>
+
+  <main class="dashboard-main" *ngIf="dashboard">
+    <header class="topbar glass">
+      <div>
+        <p class="eyebrow">Rider Profile</p>
+        <h1>{{ dashboard.riderName }}</h1>
+        <p class="location">{{ displayLocation() }}</p>
+      </div>
+
+      <div class="status-cluster">
+        <span class="badge" [class.online]="dashboard.riderStatus === 'Online'">
+          {{ dashboard.riderStatus }}
+        </span>
+        <span class="badge" [class.approved]="dashboard.isApproved">
+          {{ dashboard.isApproved ? 'Approved' : 'Pending Approval' }}
+        </span>
+      </div>
+    </header>
+
+    <section class="toggle-row glass">
+      <button (click)="toggleOnline()" [disabled]="statusSaving">
+        {{ dashboard.riderStatus === 'Online' ? 'Go Offline' : 'Go Online' }}
+      </button>
+      <button (click)="toggleAvailability()" [disabled]="statusSaving">
+        {{ dashboard.availability ? 'Set Unavailable' : 'Set Available' }}
+      </button>
+      <p class="meta">Vehicle: {{ dashboard.vehicleType || 'Not configured' }}</p>
+    </section>
+
+    <!-- ── Incoming Orders (Accept / Reject) ─────────────────────────────── -->
+    <section *ngIf="pendingOrders().length > 0" class="incoming-orders glass">
+      <h2 class="incoming-title">🛵 New Orders — Action Required</h2>
+      <article *ngFor="let order of pendingOrders()" class="order-card glass">
+        <div class="order-card-header">
+          <span class="order-id">Order #{{ order.orderId }}</span>
+          <span class="order-total-badge">{{ order.orderTotal }}</span>
+        </div>
+        <div class="order-card-body">
+          <span *ngIf="order.customerName" class="order-meta">👤 {{ order.customerName }}</span>
+          <span *ngIf="order.customerPhone" class="order-meta">📞 {{ order.customerPhone }}</span>
+          <span *ngIf="order.shippingAddress" class="order-meta order-address">📍 {{ order.shippingAddress }}</span>
+        </div>
+
+        <!-- ── Countdown timer — only shown while timer is running ── -->
+        <div class="countdown-row" *ngIf="getCountdown(order.orderId) > 0">
+          <div class="countdown-circle"
+               [class.warn]="(orderCountdowns()[order.orderId] ?? 0) <= 20"
+               [class.urgent]="(orderCountdowns()[order.orderId] ?? 0) <= 10">
+            <span class="countdown-number">{{ orderCountdowns()[order.orderId] ?? 0 }}</span>
+            <span class="countdown-unit">sec</span>
+          </div>
+          <div class="countdown-bar-wrap">
+            <div class="countdown-label-text">
+              Auto-rejected in <strong>{{ orderCountdowns()[order.orderId] ?? 0 }}s</strong> — respond now!
+            </div>
+            <div class="countdown-bar-track">
+              <div class="countdown-bar-fill"
+                   [class.warn]="(orderCountdowns()[order.orderId] ?? 0) <= 20"
+                   [class.urgent]="(orderCountdowns()[order.orderId] ?? 0) <= 10"
+                   [style.width.%]="getCountdownPercent(order.orderId, order.expiresInSeconds ?? 60)">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="order-card-actions">
+          <button class="btn-accept" (click)="acceptOrder(order)">✅ Accept</button>
+          <button class="btn-reject" (click)="rejectOrder(order)">❌ Reject</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="cards-grid">
+      <article class="glass stat-card">
+        <h3>Earnings</h3>
+        <p class="value">Rs {{ dashboard.earnings | number : '1.0-0' }}</p>
+      </article>
+      <article class="glass stat-card">
+        <h3>Active Deliveries</h3>
+        <p class="value">{{ dashboard.activeDeliveries }}</p>
+      </article>
+      <article class="glass stat-card">
+        <h3>Available Orders</h3>
+        <p class="value">{{ dashboard.availableOrders }}</p>
+      </article>
+      <article class="glass stat-card">
+        <h3>Delivered</h3>
+        <p class="value">{{ dashboard.deliveredCount }}</p>
+      </article>
+    </section>
+
+    <section class="detail-grid">
+      <article class="glass detail-card">
+        <h2>Active Delivery</h2>
+        <p *ngIf="dashboard.activeDeliveries > 0">You currently have {{ dashboard.activeDeliveries }} live {{ dashboard.activeDeliveries === 1 ? 'task' : 'tasks' }} in progress.</p>
+        <p *ngIf="dashboard.activeDeliveries === 0">No live delivery yet. Stay online to receive the next order.</p>
+        <div class="selected-order" *ngIf="selectedActiveOrderId > 0">
+          Selected Order: #{{ selectedActiveOrderId }}
+        </div>
+        <button class="detail-action" *ngIf="selectedActiveOrderId > 0" (click)="openActiveDelivery()">
+          Open Selected Delivery
+        </button>
+      </article>
+
+      <article class="glass detail-card">
+        <h2>Available Orders</h2>
+        <p *ngIf="dashboard.activeOrderIds.length > 0">View all orders accepted by you and choose one for active delivery.</p>
+        <p *ngIf="dashboard.activeOrderIds.length === 0">No available orders right now. Keep app status online.</p>
+        <button class="detail-action" *ngIf="dashboard.activeOrderIds.length > 0" (click)="goToAcceptedOrders()">
+          View Accepted Orders
+        </button>
+      </article>
+
+      <article class="glass detail-card">
+        <h2>Delivery History</h2>
+        <p>You have completed {{ dashboard.deliveredCount }} {{ dashboard.deliveredCount === 1 ? 'delivery' : 'deliveries' }} so far.</p>
+        <button class="detail-action" (click)="goToDeliveryHistory()">View History</button>
+      </article>
+    </section>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </main>
+</section>
+
+<ng-template #loadingTpl>
+  <section class="dashboard-loading">
+    <div class="loader-card">Loading your rider dashboard...</div>
+  </section>
+</ng-template>

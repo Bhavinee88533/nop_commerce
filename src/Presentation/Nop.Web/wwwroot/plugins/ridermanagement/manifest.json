@@ -1,0 +1,21 @@
+{
+  "name": "Rider Dashboard",
+  "short_name": "Rider",
+  "description": "Real-time delivery order notifications for riders",
+  "start_url": "/rider/dashboard",
+  "display": "standalone",
+  "background_color": "#f4f6f9",
+  "theme_color": "#1a73e8",
+  "icons": [
+    {
+      "src": "/plugins/ridermanagement/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/plugins/ridermanagement/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "Group": "Miscellaneous",
+  "FriendlyName": "OTP Login",
+  "SystemName": "Misc.OtpLogin",
+  "Version": "1.0.0",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Your Company",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Misc.OtpLogin.dll",
+  "Description": "Adds a 'Login with OTP' option (mobile/email) with hashed storage, expiry, retry limits, resend cooldown, and auto-registration. Uses a fixed SMTP sender configured in appsettings.json (section 'OtpEmail') so OTP delivery is independent of the admin email account."
+}

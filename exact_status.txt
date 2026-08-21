@@ -1,0 +1,4 @@
+ M src/Plugins/Nop.Plugin.ExternalAuth.Google/Controllers/GoogleAuthenticationController.cs
+MM src/Presentation/Nop.Web/Themes/DefaultClean/Content/css/styles.css
+AM src/Presentation/Nop.Web/Themes/DefaultClean/Content/css/zepto-overrides.css
+MM src/Presentation/Nop.Web/Themes/DefaultClean/Views/Shared/Head.cshtml

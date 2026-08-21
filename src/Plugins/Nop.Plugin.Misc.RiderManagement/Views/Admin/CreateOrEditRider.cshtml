@@ -1,0 +1,111 @@
+@using Nop.Plugin.Misc.RiderManagement.Models.Admin
+@model RiderModel
+
+@{
+    Layout = "_AdminLayout";
+    var isEdit = Model.Id > 0;
+    ViewBag.PageTitle = isEdit
+        ? T("Plugins.Misc.RiderManagement.Rider.Edit").Text
+        : T("Plugins.Misc.RiderManagement.Rider.AddNew").Text;
+    NopHtml.SetActiveMenuItemSystemName("Misc.RiderManagement");
+}
+
+<form asp-controller="RiderManagement" asp-action="@(isEdit ? "Edit" : "Create")" method="post">
+    <div class="content-header clearfix">
+        <h1 class="float-left">
+            @ViewBag.PageTitle
+            <small>
+                <i class="fas fa-arrow-circle-left"></i>
+                <a asp-action="List">@T("Plugins.Misc.RiderManagement.Riders")</a>
+            </small>
+        </h1>
+        <div class="float-right">
+            <button type="submit" name="save" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                @T("Admin.Common.Save")
+            </button>
+            <button type="submit" name="save-continue" class="btn btn-info">
+                <i class="fas fa-save"></i>
+                @T("Admin.Common.SaveContinue")
+            </button>
+            @if (isEdit)
+            {
+                <button type="button" id="rider-delete" class="btn btn-danger">
+                    <i class="far fa-trash-alt"></i>
+                    @T("Admin.Common.Delete")
+                </button>
+            }
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="form-horizontal">
+                <div class="cards-group">
+                    <div class="card card-default">
+                        <div class="card-body">
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="Name" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="Name" />
+                                    <span asp-validation-for="Name"></span>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="Phone" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="Phone" />
+                                    <span asp-validation-for="Phone"></span>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="Email" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="Email" />
+                                    <span asp-validation-for="Email"></span>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="StatusId" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-select asp-for="StatusId" asp-items="Model.AvailableStatuses" />
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="IsOnline" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="IsOnline" />
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="CustomerId" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="CustomerId" />
+                                    <span asp-validation-for="CustomerId"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
+
+@if (Model.Id > 0)
+{
+    <nop-delete-confirmation asp-model-id="@Model.Id" asp-button-id="rider-delete" />
+}

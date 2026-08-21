@@ -1,0 +1,278 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <title>Complete Registration</title>
+    <link rel="stylesheet" href="/otp/theme.css?v=1" />
+</head>
+<body>
+    <main class="card">
+        <div class="logo-wrap">
+            <div class="logo">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+            </div>
+        </div>
+        <h1>Create your account</h1>
+        <p class="subtitle">OTP verified! Just a few more details to get you started.</p>
+
+        <div class="verified-badge">
+            &#10003;&nbsp;<span>Verified: <strong id="verifiedDest"></strong></span>
+        </div>
+
+        <form id="regForm" novalidate>
+            <div class="row">
+                <div class="field">
+                    <label for="firstName">First name <span class="required">*</span></label>
+                    <input type="text" id="firstName" autocomplete="given-name" placeholder="John" maxlength="50" />
+                    <div class="error-msg" id="firstNameError"></div>
+                </div>
+                <div class="field">
+                    <label for="lastName">Last name <span class="required">*</span></label>
+                    <input type="text" id="lastName" autocomplete="family-name" placeholder="Smith" maxlength="50" />
+                    <div class="error-msg" id="lastNameError"></div>
+                </div>
+            </div>
+
+            <hr class="divider" />
+
+            <!-- Phone OTP users: verified phone shown, email required -->
+            <div id="phoneOtpSection" style="display:none">
+                <div class="field">
+                    <label>Mobile number (verified)</label>
+                    <input type="text" id="verifiedPhone" readonly />
+                </div>
+                <div class="field">
+                    <label for="emailInput">Email address <span class="required">*</span></label>
+                    <input type="email" id="emailInput" autocomplete="email" placeholder="you@example.com" maxlength="254" />
+                    <div class="error-msg" id="emailError"></div>
+                </div>
+            </div>
+
+            <!-- Email OTP users: verified email shown, phone required -->
+            <div id="emailOtpSection" style="display:none">
+                <div class="field">
+                    <label>Email address (verified)</label>
+                    <input type="text" id="verifiedEmail" readonly />
+                </div>
+                <div class="field">
+                    <label for="phoneInput">Mobile number <span class="required">*</span></label>
+                    <div class="phone-row">
+                        <select id="phoneCountryCode" class="cc-select" aria-label="Country code"></select>
+                        <input type="tel" id="phoneInput" inputmode="numeric" autocomplete="tel-national"
+                               placeholder="Enter mobile number" maxlength="15" />
+                    </div>
+                    <div class="error-msg" id="phoneError"></div>
+                </div>
+            </div>
+
+            <div id="serverMsg" class="server-msg"></div>
+
+            <button type="submit" id="submitBtn" class="primary" disabled>Create account &amp; continue</button>
+            <a class="back-link" href="/otp/login">Back to login</a>
+        </form>
+    </main>
+
+    <script>
+    (function () {
+        var params = new URLSearchParams(window.location.search);
+        var token = params.get('token') || '';
+        var otpType = params.get('type') || 'email';
+
+        var dest = '';
+        try { dest = localStorage.getItem('nop_otp_reg_dest') || ''; localStorage.removeItem('nop_otp_reg_dest'); } catch(e) {}
+
+        document.getElementById('verifiedDest').textContent = dest || 'your account';
+
+        if (otpType === 'mobile') {
+            document.getElementById('phoneOtpSection').style.display = '';
+            document.getElementById('verifiedPhone').value = dest;
+        } else {
+            document.getElementById('emailOtpSection').style.display = '';
+            document.getElementById('verifiedEmail').value = dest;
+        }
+
+        if (!token) {
+            showServerError('Invalid registration link. Please start over.');
+        }
+
+        var firstNameInput  = document.getElementById('firstName');
+        var lastNameInput   = document.getElementById('lastName');
+        var emailInput      = document.getElementById('emailInput');
+        var phoneInput      = document.getElementById('phoneInput');
+        var phoneCC         = document.getElementById('phoneCountryCode');
+        var firstNameError  = document.getElementById('firstNameError');
+        var lastNameError   = document.getElementById('lastNameError');
+        var emailError      = document.getElementById('emailError');
+        var phoneError      = document.getElementById('phoneError');
+        var serverMsg       = document.getElementById('serverMsg');
+        var submitBtn       = document.getElementById('submitBtn');
+
+        // Populate country code dropdown
+        var COUNTRIES = [
+            {c:'IN',n:'India',d:'+91'},{c:'US',n:'United States',d:'+1'},{c:'GB',n:'United Kingdom',d:'+44'},
+            {c:'AU',n:'Australia',d:'+61'},{c:'AE',n:'UAE',d:'+971'},{c:'SG',n:'Singapore',d:'+65'},
+            {c:'JP',n:'Japan',d:'+81'},{c:'DE',n:'Germany',d:'+49'},{c:'FR',n:'France',d:'+33'},
+            {c:'CN',n:'China',d:'+86'},{c:'CA',n:'Canada',d:'+1'},{c:'BR',n:'Brazil',d:'+55'},
+            {c:'ZA',n:'South Africa',d:'+27'},{c:'NG',n:'Nigeria',d:'+234'},{c:'KE',n:'Kenya',d:'+254'},
+            {c:'PK',n:'Pakistan',d:'+92'},{c:'BD',n:'Bangladesh',d:'+880'},{c:'LK',n:'Sri Lanka',d:'+94'},
+            {c:'NP',n:'Nepal',d:'+977'},{c:'MX',n:'Mexico',d:'+52'},{c:'AR',n:'Argentina',d:'+54'},
+            {c:'ID',n:'Indonesia',d:'+62'},{c:'PH',n:'Philippines',d:'+63'},{c:'MY',n:'Malaysia',d:'+60'},
+            {c:'TH',n:'Thailand',d:'+66'},{c:'KR',n:'South Korea',d:'+82'},{c:'IT',n:'Italy',d:'+39'},
+            {c:'ES',n:'Spain',d:'+34'},{c:'PT',n:'Portugal',d:'+351'},{c:'NL',n:'Netherlands',d:'+31'},
+            {c:'SE',n:'Sweden',d:'+46'},{c:'NO',n:'Norway',d:'+47'},{c:'DK',n:'Denmark',d:'+45'},
+            {c:'FI',n:'Finland',d:'+358'},{c:'CH',n:'Switzerland',d:'+41'},{c:'AT',n:'Austria',d:'+43'},
+            {c:'BE',n:'Belgium',d:'+32'},{c:'PL',n:'Poland',d:'+48'},{c:'RU',n:'Russia',d:'+7'},
+            {c:'TR',n:'Turkey',d:'+90'},{c:'SA',n:'Saudi Arabia',d:'+966'},{c:'EG',n:'Egypt',d:'+20'},
+            {c:'GH',n:'Ghana',d:'+233'},{c:'NZ',n:'New Zealand',d:'+64'},{c:'HK',n:'Hong Kong',d:'+852'},
+            {c:'IL',n:'Israel',d:'+972'},{c:'IR',n:'Iran',d:'+98'},{c:'IQ',n:'Iraq',d:'+964'}
+        ];
+        if (phoneCC) {
+            COUNTRIES.forEach(function(co) {
+                var o = document.createElement('option');
+                o.value = co.d;
+                o.textContent = co.c + ' (' + co.d + ')';
+                phoneCC.appendChild(o);
+            });
+            phoneCC.value = '+91'; // default India
+        }
+
+        function showServerError(msg) {
+            serverMsg.className = 'server-msg error';
+            serverMsg.textContent = msg;
+        }
+
+        function handleSessionExpiry(b) {
+            if (b && b.sessionExpired) {
+                serverMsg.className = 'server-msg error';
+                serverMsg.textContent = 'Your session has expired. Redirecting to login...';
+                submitBtn.disabled = true;
+                setTimeout(function () { window.location.href = '/otp/login'; }, 2000);
+                return true;
+            }
+            return false;
+        }
+
+        function validateEmail(val) {
+            if (!val) return 'Email address is required.';
+            if (val.length > 254) return 'Email address is too long.';
+            // Must have local@domain.tld format, no leading/trailing dots, no consecutive dots
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val))
+                return 'Please enter a valid email address.';
+            var parts = val.split('@');
+            var local = parts[0], domain = parts[1];
+            if (/^\.|\.$|\.\./.test(local))  return 'Please enter a valid email address.';
+            if (/^\.|\.$|\.\./.test(domain)) return 'Please enter a valid email address.';
+            return '';
+        }
+
+        function validatePhone(val, countryCode) {
+            if (!val) return 'Mobile number is required.';
+            if (!/^\d+$/.test(val)) return 'Please enter a valid mobile number.';
+            var cc = (countryCode || '+91').replace('+', '');
+            if (cc === '91') {
+                // India: exactly 10 digits, must start with 6, 7, 8, or 9
+                if (val.length !== 10 || !/^[6789]/.test(val))
+                    return 'Please enter a valid mobile number.';
+            } else {
+                if (val.length < 5 || val.length > 15)
+                    return 'Please enter a valid mobile number.';
+            }
+            return '';
+        }
+
+        function validate() {
+            var fn = (firstNameInput.value || '').trim();
+            var ln = (lastNameInput.value || '').trim();
+            firstNameError.textContent = firstNameInput.dataset.touched ? (fn ? '' : 'First name is required.') : '';
+            lastNameError.textContent  = lastNameInput.dataset.touched  ? (ln ? '' : 'Last name is required.')  : '';
+
+            var contactOk = true;
+            if (otpType === 'mobile' && emailInput) {
+                var emailVal = (emailInput.value || '').trim();
+                var emailErr = validateEmail(emailVal);
+                emailError.textContent = emailInput.dataset.touched ? emailErr : '';
+                contactOk = !emailErr;
+            }
+            if (otpType === 'email' && phoneInput) {
+                var phoneVal = (phoneInput.value || '').trim().replace(/\s+/g, '');
+                var phoneErr = validatePhone(phoneVal, phoneCC ? phoneCC.value : '+91');
+                if (phoneError) phoneError.textContent = phoneInput.dataset.touched ? phoneErr : '';
+                contactOk = contactOk && !phoneErr;
+            }
+
+            submitBtn.disabled = !(fn && ln && contactOk && token);
+            return fn && ln && contactOk;
+        }
+
+        [firstNameInput, lastNameInput, emailInput, phoneInput].forEach(function(inp) {
+            if (!inp) return;
+            inp.addEventListener('input', function() { inp.dataset.touched = '1'; validate(); });
+            inp.addEventListener('blur',  function() { inp.dataset.touched = '1'; validate(); });
+        });
+        if (phoneCC) phoneCC.addEventListener('change', validate);
+
+        firstNameInput.focus();
+
+        document.getElementById('regForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            firstNameInput.dataset.touched = '1';
+            lastNameInput.dataset.touched  = '1';
+            if (emailInput) emailInput.dataset.touched = '1';
+            if (phoneInput) phoneInput.dataset.touched = '1';
+            if (!validate()) return;
+
+            serverMsg.className = 'server-msg';
+            serverMsg.textContent = '';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating account...';
+
+            var fullPhone = '';
+            if (otpType === 'email' && phoneInput) {
+                var cc = (phoneCC ? phoneCC.value : '+91');
+                fullPhone = cc + (phoneInput.value || '').trim().replace(/\s+/g, '');
+            }
+            var payload = {
+                registrationToken: token,
+                firstName: firstNameInput.value.trim(),
+                lastName:  lastNameInput.value.trim(),
+                email: otpType === 'mobile' ? (emailInput ? emailInput.value.trim() : '') : null,
+                phone: otpType === 'email'  ? fullPhone : null
+            };
+
+            fetch('/otp/complete-registration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(b) {
+                if (handleSessionExpiry(b)) return;
+                if (b.ok) {
+                    serverMsg.className = 'server-msg success';
+                    serverMsg.textContent = b.isNewUser
+                        ? 'Account created! Welcome. Redirecting...'
+                        : (b.message || 'Signed in. Redirecting...');
+                    try { localStorage.removeItem('nop_otp_session'); } catch(e) {}
+                    setTimeout(function() { window.location.href = b.redirectUrl || '/'; }, 1200);
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create account & continue';
+                    showServerError(b.error || 'Registration failed. Please try again.');
+                    if (b.expired) setTimeout(function() { window.location.href = '/otp/login'; }, 2500);
+                }
+            })
+            .catch(function() {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create account & continue';
+                showServerError('Network error. Please try again.');
+            });
+        });
+    })();
+    </script>
+</body>
+</html>

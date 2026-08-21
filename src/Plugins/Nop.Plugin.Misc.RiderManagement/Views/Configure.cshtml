@@ -1,0 +1,42 @@
+@model ConfigurationModel
+
+@{
+    Layout = "_ConfigurePlugin";
+    ViewBag.Title = T("Plugins.Misc.RiderManagement.Admin.Title").Text;
+}
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card card-default">
+            <div class="card-header">
+                <h3 class="card-title">@T("Plugins.Misc.RiderManagement.Admin.Title")</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <p>@T("Plugins.Misc.RiderManagement.Admin.Description")</p>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <label class="col-form-label">Module Status</label>
+                    </div>
+                    <div class="col-md-9">
+                        <p class="form-control-static">@Model.ModuleStatus</p>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-12">
+                        <hr />
+                        <p class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Three sample products (<strong>Fresh Mango</strong>, <strong>Organic Milk</strong>, <strong>Sourdough Bread</strong>)
+                            are automatically seeded into the store catalogue on startup — no action needed.
+                            Browse the store front, add one to the cart, and place an order to trigger the rider notification flow.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

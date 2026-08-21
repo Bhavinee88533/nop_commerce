@@ -1,0 +1,125 @@
+@using Nop.Plugin.Misc.RiderManagement.Models.Admin
+@model RiderSearchModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewBag.PageTitle = T("Plugins.Misc.RiderManagement.Riders").Text;
+    NopHtml.SetActiveMenuItemSystemName("Misc.RiderManagement");
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">
+        @T("Plugins.Misc.RiderManagement.Riders")
+    </h1>
+    <div class="float-right">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus-square"></i>
+            @T("Plugins.Misc.RiderManagement.Rider.AddNew")
+        </a>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <div class="cards-group">
+
+                @* Search Panel *@
+                <div class="card card-default card-search">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="form-group row">
+                                    <div class="col-md-4">
+                                        <nop-label asp-for="SearchName" />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <nop-editor asp-for="SearchName" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group row">
+                                    <div class="col-md-4">
+                                        <nop-label asp-for="SearchStatusId" />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <nop-select asp-for="SearchStatusId" asp-items="Model.AvailableStatuses" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" id="search-riders" class="btn btn-primary btn-search">
+                                    <i class="fas fa-search"></i>
+                                    @T("Admin.Common.Search")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* Grid *@
+                <div class="card card-default">
+                    <div class="card-body">
+                        @await Html.PartialAsync("Table", new DataTablesModel
+                        {
+                            Name = "riders-grid",
+                            UrlRead = new DataUrl("RiderList", "RiderManagement", null),
+                            SearchButtonId = "search-riders",
+                            Length = Model.PageSize,
+                            LengthMenu = Model.AvailablePageSizes,
+                            Filters = new List<FilterParameter>
+                            {
+                                new FilterParameter(nameof(Model.SearchName)),
+                                new FilterParameter(nameof(Model.SearchStatusId))
+                            },
+                            ColumnCollection = new List<ColumnProperty>
+                            {
+                                new ColumnProperty(nameof(RiderModel.Name))
+                                {
+                                    Title = T("Plugins.Misc.RiderManagement.Fields.Name").Text
+                                },
+                                new ColumnProperty(nameof(RiderModel.Phone))
+                                {
+                                    Title = T("Plugins.Misc.RiderManagement.Fields.Phone").Text
+                                },
+                                new ColumnProperty(nameof(RiderModel.Email))
+                                {
+                                    Title = T("Plugins.Misc.RiderManagement.Fields.Email").Text
+                                },
+                                new ColumnProperty(nameof(RiderModel.StatusId))
+                                {
+                                    Title = T("Plugins.Misc.RiderManagement.Fields.Status").Text,
+                                    Render = new RenderCustom("renderStatus")
+                                },
+                                new ColumnProperty(nameof(RiderModel.IsOnline))
+                                {
+                                    Title = T("Plugins.Misc.RiderManagement.Fields.IsOnline").Text,
+                                    Render = new RenderBoolean()
+                                },
+                                new ColumnProperty(nameof(RiderModel.CustomerId))
+                                {
+                                    Title = T("Plugins.Misc.RiderManagement.Fields.CustomerId").Text
+                                },
+                                new ColumnProperty(nameof(RiderModel.Id))
+                                {
+                                    Title = T("Admin.Common.Edit").Text,
+                                    Width = "100",
+                                    ClassName = NopColumnClassDefaults.Button,
+                                    Render = new RenderButtonEdit(new DataUrl("~/Admin/RiderManagement/Edit/"))
+                                }
+                            }
+                        })
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function renderStatus(data, type, row) {
+        return data === 0 ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>';
+    }
+</script>

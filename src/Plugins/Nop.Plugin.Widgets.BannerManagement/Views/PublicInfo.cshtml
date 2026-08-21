@@ -1,0 +1,14 @@
+@model IList<PublicBannerModel>
+@inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
+@inject Nop.Web.Framework.UI.INopHtmlHelper NopHtml
+
+@{
+    NopHtml.AddCssFileParts("~/Plugins/Widgets.BannerManagement/Content/css/banner-management.css", null);
+}
+
+<section class="bm-banner-stack">
+    @foreach (var banner in Model)
+    {
+        @await Html.PartialAsync("~/Plugins/Widgets.BannerManagement/Views/_BannerItem.cshtml", banner)
+    }
+</section>

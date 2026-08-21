@@ -1,0 +1,34 @@
+@model PublicBannerModel
+
+@{
+    var hasLink = !string.IsNullOrWhiteSpace(Model.RedirectUrl);
+}
+
+<article class="bm-banner-item">
+    <div class="bm-banner-media">
+        @if (hasLink)
+        {
+            <a class="bm-banner-media-link" href="@Model.RedirectUrl">
+                <img src="@Model.PictureUrl" alt="@Model.Title" loading="lazy" />
+            </a>
+        }
+        else
+        {
+            <img src="@Model.PictureUrl" alt="@Model.Title" loading="lazy" />
+        }
+    </div>
+    <div class="bm-banner-content">
+        @if (!string.IsNullOrWhiteSpace(Model.Title))
+        {
+            <h2>@Model.Title</h2>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p>@Model.Description</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.ButtonText) && !string.IsNullOrWhiteSpace(Model.RedirectUrl))
+        {
+            <a class="bm-banner-cta" href="@Model.RedirectUrl">@Model.ButtonText</a>
+        }
+    </div>
+</article>

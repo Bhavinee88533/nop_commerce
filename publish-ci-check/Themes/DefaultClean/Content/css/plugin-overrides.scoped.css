@@ -1,0 +1,75 @@
+/*
+ * Optional plugin accent layer (disabled by default).
+ *
+ * Safety boundary:
+ * - This file is loaded only when explicitly enabled in Head.cshtml.
+ * - Rules apply only inside the .plugin-theme-scope wrapper.
+ * - Plugin/OAuth owners can opt in per view without affecting global storefront UI.
+ */
+
+.plugin-theme-scope {
+  --plugin-accent-bg: var(--surface-bg);
+  --plugin-accent-border: var(--border-soft);
+  --plugin-accent-text: var(--text-secondary);
+  --plugin-accent-title: var(--text-primary);
+  --plugin-accent-link: var(--primary-color);
+  --plugin-accent-link-hover: var(--primary-hover);
+}
+
+.plugin-theme-scope .plugin-card,
+.plugin-theme-scope .request-list-page .section,
+.plugin-theme-scope .news-items .news-item,
+.plugin-theme-scope .forums-table-section,
+.plugin-theme-scope .poll {
+  border: 1px solid var(--plugin-accent-border);
+  background-color: var(--plugin-accent-bg);
+}
+
+.plugin-theme-scope a {
+  color: var(--plugin-accent-link);
+}
+
+.plugin-theme-scope a:hover,
+.plugin-theme-scope a:focus {
+  color: var(--plugin-accent-link-hover);
+}
+
+.plugin-theme-scope .button-1,
+.plugin-theme-scope .button-2,
+.plugin-theme-scope .btn_small,
+.plugin-theme-scope .paypal-button {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+}
+
+.plugin-theme-scope .button-1:hover,
+.plugin-theme-scope .button-1:focus,
+.plugin-theme-scope .button-2:hover,
+.plugin-theme-scope .button-2:focus,
+.plugin-theme-scope .btn_small:hover,
+.plugin-theme-scope .btn_small:focus,
+.plugin-theme-scope .paypal-button:hover,
+.plugin-theme-scope .paypal-button:focus {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.plugin-theme-scope input[type="text"],
+.plugin-theme-scope input[type="email"],
+.plugin-theme-scope input[type="tel"],
+.plugin-theme-scope input[type="password"],
+.plugin-theme-scope textarea,
+.plugin-theme-scope select {
+  border-color: var(--plugin-accent-border);
+}
+
+.plugin-theme-scope input[type="text"]:focus,
+.plugin-theme-scope input[type="email"]:focus,
+.plugin-theme-scope input[type="tel"]:focus,
+.plugin-theme-scope input[type="password"]:focus,
+.plugin-theme-scope textarea:focus,
+.plugin-theme-scope select:focus {
+  border-color: var(--border-focus-color);
+  box-shadow: var(--focus-ring);
+}

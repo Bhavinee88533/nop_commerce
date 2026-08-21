@@ -1,0 +1,123 @@
+<section class="order-page" *ngIf="!loading; else loadingTpl">
+  <header class="order-header card" *ngIf="orderDetails as details">
+    <div>
+      <p class="eyebrow">Order Header</p>
+      <h1>Order #{{ details.customOrderNumber || details.orderId }}</h1>
+      <p class="meta">Assigned delivery id: {{ details.deliveryOrderId }}</p>
+    </div>
+
+    <div class="status-wrap">
+      <span class="status-badge" [ngClass]="getStatusClass(details.deliveryStatus)">
+        {{ details.deliveryStatus }}
+      </span>
+      <button type="button" class="secondary-btn" (click)="goBackToDashboard()" aria-label="Back to rider dashboard">Back to Dashboard</button>
+    </div>
+  </header>
+
+  <div class="error-message" *ngIf="errorMessage">
+    <p>{{ errorMessage }}</p>
+    <button type="button" class="secondary-btn" (click)="retry()" aria-label="Retry loading order details">Retry</button>
+  </div>
+
+  <main class="content-grid" *ngIf="orderDetails as details">
+    <article class="card">
+      <h2>Customer Information</h2>
+      <p class="value-strong customer-name">{{ getCustomerDisplayName(details) }}</p>
+      <p class="customer-phone">Phone: {{ getContactPhone() }}</p>
+      <button type="button" class="secondary-btn" *ngIf="details.deliveryAddress.phoneNumber" (click)="togglePhoneMask()" aria-label="Toggle customer phone visibility">
+        {{ showFullPhone ? 'Hide Number' : 'Show Number' }}
+      </button>
+      <p class="muted customer-note">Masking defaults to only showing the last 4 digits.</p>
+    </article>
+
+    <article class="card">
+      <h2>Delivery Address</h2>
+      <p class="value-strong">Readable address card</p>
+      <p class="muted" *ngIf="getAddressLines(details.deliveryAddress).length === 0">No delivery address available.</p>
+      <p class="address-line" *ngFor="let line of getAddressLines(details.deliveryAddress)">{{ line }}</p>
+    </article>
+
+    <article class="card card-wide">
+      <h2>Order Items Summary</h2>
+      <div class="table-wrap" *ngIf="details.items.length > 0; else noItemsTpl">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Item Name</th>
+              <th>Quantity</th>
+              <th>Price</th>
+              <th>Total Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of details.items; trackBy: trackByProductId">
+              <td>{{ item.itemName }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ getCurrencySymbol(details.currencyCode) }} {{ item.unitPrice | number : '1.2-2' }}</td>
+              <td>{{ getCurrencySymbol(details.currencyCode) }} {{ getLineTotal(item) | number : '1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="order-total">Order Total: {{ getCurrencySymbol(details.currencyCode) }} {{ details.orderTotal | number : '1.2-2' }}</p>
+    </article>
+
+    <div class="post-items-row card-wide">
+      <article class="card compact-card">
+        <h2>Delivery Instructions</h2>
+        <p class="muted" *ngIf="!details.deliveryInstructions">No delivery notes provided by customer.</p>
+        <p class="note" *ngIf="details.deliveryInstructions">{{ details.deliveryInstructions }}</p>
+      </article>
+
+      <article class="card compact-card">
+        <h2>Map Navigation</h2>
+        <button type="button" class="map-btn" (click)="openMapNavigation()" aria-label="Open delivery location in Google Maps">Open in Google Maps</button>
+        <p class="muted">Coordinates are used when available, otherwise full address is used.</p>
+      </article>
+
+      <article class="card compact-card">
+        <h2>Current Order Status</h2>
+        <p>
+          <span class="status-badge" [ngClass]="getStatusClass(details.deliveryStatus)">{{ details.deliveryStatus }}</span>
+        </p>
+        <p class="muted">Created: {{ details.createdOnUtc ? (details.createdOnUtc | date : 'medium') : 'N/A' }}</p>
+        <p class="muted">Assigned: {{ details.assignedAtUtc ? (details.assignedAtUtc | date : 'medium') : 'N/A' }}</p>
+
+        <ng-container *ngIf="getNextStatusAction(details) as action">
+          <button
+            type="button"
+            class="action-btn"
+            [disabled]="statusUpdating"
+            (click)="promptStatusUpdate(action)"
+            [attr.aria-label]="'Update delivery status to ' + action.label">
+            {{ statusUpdating ? 'Updating...' : action.label }}
+          </button>
+        </ng-container>
+      </article>
+    </div>
+  </main>
+</section>
+
+<!-- Confirmation modal -->
+<div class="confirm-overlay" *ngIf="pendingStatusAction" role="dialog" aria-modal="true">
+  <div class="confirm-card">
+    <p class="confirm-message">{{ pendingStatusAction.confirmMessage }}</p>
+    <div class="confirm-actions">
+      <button type="button" class="confirm-yes" (click)="confirmStatusUpdate()" aria-label="Confirm status update">Yes, confirm</button>
+      <button type="button" class="confirm-no" (click)="cancelStatusUpdate()" aria-label="Cancel status update">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <section class="loading-page">
+    <div class="loading-card">
+      <p>Loading rider order details...</p>
+      <button type="button" class="secondary-btn" *ngIf="errorMessage" (click)="retry()">Retry</button>
+    </div>
+  </section>
+</ng-template>
+
+<ng-template #noItemsTpl>
+  <p class="muted">No order items available.</p>
+</ng-template>

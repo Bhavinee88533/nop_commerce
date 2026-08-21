@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Verify OTP</title>
+    <link rel="stylesheet" href="/otp/theme.css?v=1" />
+</head>
+<body>
+    <main class="card">
+        <!-- Minimal icon — no brand text -->
+        <div class="logo-wrap">
+            <div class="logo">
+                <!-- shield/lock icon -->
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 2L4 5v6c0 5.25 3.5 10.15 8 11.5C16.5 21.15 20 16.25 20 11V5L12 2z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <circle cx="12" cy="15.5" r="0.5" fill="#fff"/>
+                </svg>
+            </div>
+        </div>
+
+        <h1>Verify your identity</h1>
+        <p class="subtitle">Enter the 6-digit code sent to <span id="destination" class="destination"></span></p>
+
+        <form id="verifyForm" novalidate>
+            <div class="otp-boxes" id="otpBoxes">
+                <input type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" />
+                <input type="text" inputmode="numeric" maxlength="1" />
+                <input type="text" inputmode="numeric" maxlength="1" />
+                <input type="text" inputmode="numeric" maxlength="1" />
+                <input type="text" inputmode="numeric" maxlength="1" />
+                <input type="text" inputmode="numeric" maxlength="1" />
+            </div>
+
+            <div id="otpError" class="error-msg"></div>
+            <div id="otpSuccess" class="success-msg" style="display:none;"></div>
+
+            <button type="submit" id="verifyBtn" class="primary" disabled>Verify &amp; continue</button>
+
+            <!-- Resend section — no attempt counters, no expiry timers -->
+            <div class="resend-section">
+                <p class="resend-hint" id="resendHint"></p>
+                <button type="button" class="resend-btn" id="resendBtn" disabled>Resend OTP</button>
+            </div>
+
+            <a class="back-link" href="/otp/login" id="backLink">&#8592; Back</a>
+        </form>
+    </main>
+
+    <script>
+        (function () {
+            var STORAGE_KEY = 'nop_otp_session';
+
+            var otpBoxes     = document.getElementById('otpBoxes');
+            var boxes        = Array.prototype.slice.call(document.querySelectorAll('#otpBoxes input'));
+            var err          = document.getElementById('otpError');
+            var ok           = document.getElementById('otpSuccess');
+            var verifyBtn    = document.getElementById('verifyBtn');
+            var resendBtn    = document.getElementById('resendBtn');
+            var resendHint   = document.getElementById('resendHint');
+            var destEl       = document.getElementById('destination');
+            var form         = document.getElementById('verifyForm');
+
+            // Track which box had focus last so we can return to it
+            var lastFocusedIdx = 0;
+
+            function loadSession() {
+                try {
+                    var raw = localStorage.getItem(STORAGE_KEY);
+                    return raw ? JSON.parse(raw) : null;
+                } catch (e) { return null; }
+            }
+            function saveSession(s) {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) {}
+            }
+
+            var session = loadSession();
+            // If URL has a sid that doesn't match the stored session, the session is stale → redirect
+            var urlSid = (new URLSearchParams(window.location.search)).get('sid');
+            if (!session || !session.sessionId || (urlSid && decodeURIComponent(urlSid) !== session.sessionId)) {
+                err.textContent = 'Session expired or invalid. Redirecting...';
+                boxes.forEach(function (b) { b.disabled = true; });
+                verifyBtn.disabled = true; resendBtn.disabled = true;
+                setTimeout(function () { window.location.href = '/otp/login'; }, 1200);
+                return;
+            }
+
+            destEl.textContent = session.destination || 'your registered contact';
+
+            // Fallback: if resend timer not stored, assume 60s cooldown from now
+            if (!session.nextResendAvailableAt || isNaN(Number(session.nextResendAvailableAt))) {
+                session.nextResendAvailableAt = Date.now() + 60000;
+                saveSession(session);
+            }
+
+            // ---- OTP boxes UX ----
+            function getCode() { return boxes.map(function (b) { return b.value; }).join(''); }
+
+            function refreshFilled() {
+                boxes.forEach(function (b) {
+                    if (b.value) b.classList.add('filled'); else b.classList.remove('filled');
+                });
+            }
+
+            function isExpired() { return session.expiresAt && Date.now() > session.expiresAt; }
+
+            function updateVerifyEnabled() {
+                var code = getCode();
+                verifyBtn.disabled = !(code.length === 6 && /^\d{6}$/.test(code) && !isExpired());
+            }
+
+            // Shake boxes + flash red on wrong OTP
+            function flashError() {
+                boxes.forEach(function (b) { b.classList.add('error-flash'); });
+                otpBoxes.classList.remove('shake');
+                void otpBoxes.offsetWidth; // force reflow to restart animation
+                otpBoxes.classList.add('shake');
+                setTimeout(function () {
+                    boxes.forEach(function (b) { b.classList.remove('error-flash'); });
+                    otpBoxes.classList.remove('shake');
+                }, 500);
+            }
+
+            // Mousedown trap — stops clicks on non-interactive areas (headings, bg) from placing a caret
+            // NOTE: focusin trap removed — it was stealing focus from the Verify/Resend buttons
+
+            boxes.forEach(function (box, idx) {
+                box.addEventListener('focus', function () {
+                    lastFocusedIdx = idx;
+                    box.select();
+                });
+
+                // PRIMARY handler: keydown with preventDefault stops browser inserting char,
+                // so input event never fires → no double-advance on desktop
+                box.addEventListener('keydown', function (e) {
+                    // Block Ctrl+C / Ctrl+X / Ctrl+A; Ctrl+V is handled by paste event
+                    if ((e.ctrlKey || e.metaKey) && ['c', 'x', 'a'].indexOf(e.key.toLowerCase()) !== -1) {
+                        e.preventDefault(); return;
+                    }
+
+                    if (e.key >= '0' && e.key <= '9') {
+                        e.preventDefault();            // stop browser inserting char (prevents input event)
+                        box.value = e.key;             // set value programmatically (doesn't fire input)
+                        refreshFilled();
+                        updateVerifyEnabled();
+                        if (idx < boxes.length - 1) {
+                            boxes[idx + 1].focus();
+                        }
+                        // Auto-submit after last digit
+                        if (getCode().length === 6 && /^\d{6}$/.test(getCode()) && !isExpired()) {
+                            setTimeout(function () {
+                                form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit'));
+                            }, 0);
+                        }
+                    } else if (e.key === 'Backspace') {
+                        e.preventDefault();
+                        if (box.value) {
+                            box.value = '';
+                            refreshFilled();
+                            updateVerifyEnabled();
+                        } else if (idx > 0) {
+                            boxes[idx - 1].focus();
+                        }
+                    } else if (e.key === 'ArrowLeft' && idx > 0) {
+                        e.preventDefault();
+                        boxes[idx - 1].focus();
+                    } else if (e.key === 'ArrowRight' && idx < boxes.length - 1) {
+                        e.preventDefault();
+                        boxes[idx + 1].focus();
+                    } else if (e.key === 'Tab') {
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            boxes[idx > 0 ? idx - 1 : boxes.length - 1].focus();
+                        } else {
+                            boxes[idx < boxes.length - 1 ? idx + 1 : 0].focus();
+                        }
+                    }
+                });
+
+                // MOBILE fallback: input event fires when keydown doesn't produce a digit key
+                // (e.g. Android virtual keyboard fires key='Unidentified')
+                box.addEventListener('input', function () {
+                    var v = box.value.replace(/\D/g, '');
+                    box.value = v.slice(-1);
+                    refreshFilled();
+                    updateVerifyEnabled();
+                    if (box.value && idx < boxes.length - 1) {
+                        boxes[idx + 1].focus();
+                    }
+                    if (getCode().length === 6 && /^\d{6}$/.test(getCode()) && !isExpired()) {
+                        form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit'));
+                    }
+                });
+
+                // Block copy/cut/right-click; ALLOW paste (handled below for full OTP)
+                box.addEventListener('copy',        function (e) { e.preventDefault(); });
+                box.addEventListener('cut',         function (e) { e.preventDefault(); });
+                box.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+                // Smart paste: fill all 6 boxes if user pastes a 6-digit code
+                box.addEventListener('paste', function (e) {
+                    e.preventDefault();
+                    var pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+                    if (pasted.length === 0) return;
+                    for (var i = 0; i < pasted.length && i < boxes.length; i++) {
+                        boxes[idx + i < boxes.length ? idx + i : boxes.length - 1].value = pasted[i] || '';
+                    }
+                    // Fill from box 0 if paste is full OTP
+                    if (pasted.length === 6) {
+                        for (var j = 0; j < 6; j++) { boxes[j].value = pasted[j]; }
+                        refreshFilled(); updateVerifyEnabled();
+                        boxes[5].focus();
+                        if (!isExpired()) {
+                            setTimeout(function () {
+                                form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit'));
+                            }, 80);
+                        }
+                    } else {
+                        // Partial paste — focus next empty
+                        refreshFilled(); updateVerifyEnabled();
+                        var nextEmpty = boxes.findIndex(function (b) { return !b.value; });
+                        if (nextEmpty !== -1) boxes[nextEmpty].focus();
+                        else boxes[5].focus();
+                    }
+                });
+            });
+
+            // ---- Mousedown focus trap: clicking anywhere non-interactive snaps focus back to OTP boxes ----
+            var INTERACTIVE_TAGS = ['INPUT', 'SELECT', 'BUTTON', 'A', 'TEXTAREA'];
+            document.querySelector('.card').addEventListener('mousedown', function (e) {
+                if (INTERACTIVE_TAGS.indexOf(e.target.tagName) !== -1) return;
+                if (boxes[0].disabled) return; // don't trap when inputs are locked
+                e.preventDefault(); // stops browser placing text caret in heading/subtitle
+                var firstEmpty = boxes.findIndex(function (b) { return !b.value; });
+                boxes[firstEmpty !== -1 ? firstEmpty : lastFocusedIdx].focus();
+            });
+
+            boxes[0].focus();
+
+            // ---- Timers (internal — NOT shown to user) ----
+            function fmtCountdown(ms) {
+                var s = Math.max(0, Math.ceil(ms / 1000));
+                var m = Math.floor(s / 60);
+                var ss = s % 60;
+                return (m > 0 ? m + ':' : '') + (m > 0 && ss < 10 ? '0' : '') + ss + 's';
+            }
+
+            // Track expiry internally to disable verify button — but never display countdown
+            function checkExpiryInternal() {
+                if (session.expiresAt && Date.now() > session.expiresAt) {
+                    boxes.forEach(function (bx) { bx.disabled = true; });
+                    verifyBtn.disabled = true;
+                    if (!err.textContent) {
+                        err.textContent = 'OTP has expired. Please request a new code.';
+                    }
+                }
+            }
+
+            function tickResendTimer() {
+                var now = Date.now();
+
+                // Hard cooldown (max resends hit)
+                if (session.cooldownUntil && now < session.cooldownUntil) {
+                    resendHint.textContent = 'Please try again after 5 minutes.';
+                    resendBtn.disabled = true;
+                    return;
+                }
+                if (session.cooldownUntil && now >= session.cooldownUntil) {
+                    // Cooldown over — reset counter
+                    session.cooldownUntil = 0;
+                    session.resendCount = 0;
+                    saveSession(session);
+                }
+
+                // Per-request cooldown (between resends)
+                if (session.nextResendAvailableAt && now < session.nextResendAvailableAt) {
+                    var rem = session.nextResendAvailableAt - now;
+                    resendHint.textContent = 'You can request a new code in ' + fmtCountdown(rem);
+                    resendBtn.disabled = true;
+                } else {
+                    resendHint.textContent = '';
+                    resendBtn.disabled = false;
+                }
+            }
+
+            setInterval(function () { checkExpiryInternal(); tickResendTimer(); updateVerifyEnabled(); }, 1000);
+            checkExpiryInternal(); tickResendTimer();
+
+            function setError(msg)   { err.textContent = msg || ''; ok.style.display = 'none'; }
+            function setOk(html)     { ok.innerHTML = html; ok.style.display = 'block'; err.textContent = ''; }
+
+            // Handle session expiry on any fetch response
+            function handleSessionExpiry(b) {
+                if (b && b.sessionExpired) {
+                    lockInputs('Your session has expired. Redirecting to login...');
+                    setTimeout(function () { window.location.href = '/otp/login'; }, 2000);
+                    return true;
+                }
+                return false;
+            }
+
+            // Clear boxes and refocus first input (called after wrong attempt)
+            function clearBoxes() {
+                boxes.forEach(function (bx) { bx.value = ''; bx.classList.remove('filled'); });
+                boxes[0].focus();
+                updateVerifyEnabled();
+            }
+
+            // Lock all input — called when locked or expired server-side
+            function lockInputs(msg) {
+                boxes.forEach(function (bx) { bx.disabled = true; bx.classList.remove('filled'); });
+                verifyBtn.disabled = true;
+                if (msg) setError(msg);
+            }
+
+            // ---- Verify ----
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var code = getCode();
+                if (!/^\d{6}$/.test(code)) { setError('Please enter the 6-digit OTP.'); return; }
+                if (isExpired())            { setError('OTP has expired. Please request a new code.'); return; }
+
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = 'Verifying...';
+
+                fetch('/otp/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ sessionId: session.sessionId, code: code })
+                }).then(function (res) { return res.json().then(function (b) { return { res: res, body: b }; }); })
+                  .then(function (r) {
+                      verifyBtn.textContent = 'Verify & continue';
+                      updateVerifyEnabled(); var b = r.body || {};
+                      if (handleSessionExpiry(b)) return;
+                      if (b.ok) {
+                          if (b.isNewUser && b.registrationToken) {
+                              // New user — save destination for registration page then redirect
+                              try { localStorage.setItem('nop_otp_reg_dest', session.destination || ''); } catch (e) {}
+                              try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+                              window.location.href = b.redirectUrl || ('/otp/register-page?token=' + b.registrationToken);
+                          } else {
+                              setOk('&#10003; OTP verified successfully. Signing you in...');
+                              try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+                              setTimeout(function () { window.location.href = b.redirectUrl || '/'; }, 1200);
+                          }
+                       } else {
+                           if (b.locked) {
+                               flashError();
+                               lockInputs('Too many attempts. Please try again later.');
+                           } else if (b.expired) {
+                               lockInputs('OTP has expired. Please request a new code.');
+                           } else {
+                               flashError();
+                               setError('Incorrect OTP. Please try again.');
+                               setTimeout(function () { clearBoxes(); }, 450);
+                           }
+                       }
+                  })
+                  .catch(function () {
+                      verifyBtn.textContent = 'Verify & continue';
+                      setError('Network error. Please try again.');
+                      updateVerifyEnabled();
+                  });
+            });
+
+                        // ---- Resend ----
+            resendBtn.addEventListener('click', function () {
+                if (resendBtn.disabled) return;
+                resendBtn.disabled = true;
+                resendHint.textContent = 'Sending new code...';
+
+                fetch('/otp/resend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ sessionId: session.sessionId })
+                }).then(function (res) { return res.json().then(function (b) { return { res: res, body: b }; }); })
+                  .then(function (r) {
+                      var b = r.body || {};
+                      if (handleSessionExpiry(b)) return;
+                      if (!r.res.ok && r.res.status === 404) {
+                          setError('Session expired. Redirecting...');
+                          setTimeout(function () { window.location.href = '/otp/login'; }, 1500);
+                          return;
+                      }
+                      if (b.ok) {
+                          session.expiresAt = Date.now() + (b.expiresInSeconds * 1000);
+                          session.nextResendAvailableAt = Date.now() + (b.resendAvailableInSeconds * 1000);
+                          session.resendCount = b.resendCount;
+                          session.maxResends  = b.maxResends;
+                          session.cooldownUntil = 0;
+                          saveSession(session);
+                          boxes.forEach(function (bx) { bx.disabled = false; bx.value = ''; bx.classList.remove('filled'); });
+                          boxes[0].focus();
+                          updateVerifyEnabled();
+                          setOk('A new code has been sent to <strong>' + session.destination + '</strong>.');
+                          tickResendTimer();
+                      } else {
+                          if (b.cooldown && b.waitSeconds) {
+                              session.cooldownUntil = Date.now() + (b.waitSeconds * 1000);
+                              saveSession(session);
+                              resendHint.textContent = 'Please try again after 5 minutes.';
+                              setError('Maximum limit reached. Please try again after 5 minutes.');
+                          } else if (b.waitSeconds) {
+                              session.nextResendAvailableAt = Date.now() + (b.waitSeconds * 1000);
+                              saveSession(session);
+                              tickResendTimer();
+                              setError(b.error || 'Please wait before requesting a new code.');
+                          } else {
+                              tickResendTimer();
+                              setError(b.error || 'Could not send a new code. Please try again.');
+                          }
+                      }
+                  })
+                  .catch(function () {
+                      setError('Network error. Please try again.');
+                      tickResendTimer();
+                  });
+            });
+
+            updateVerifyEnabled();
+        })();
+    </script>
+</body>
+</html>

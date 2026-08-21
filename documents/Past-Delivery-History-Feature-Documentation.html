@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Past Delivery History — Feature Documentation</title>
+  <style>
+    /* ── Print / PDF styles ────────────────────────────────────────────── */
+    @media print {
+      .no-print { display: none; }
+      body { font-size: 11pt; }
+      h1 { page-break-before: avoid; }
+      h2 { page-break-after: avoid; }
+      table { page-break-inside: avoid; }
+      .page-break { page-break-before: always; }
+    }
+
+    /* ── Base ──────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f6f9;
+      color: #1a1a2e;
+      line-height: 1.65;
+      padding: 0;
+    }
+
+    /* ── Cover Page ────────────────────────────────────────────────────── */
+    .cover {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px 40px;
+    }
+    .cover .logo {
+      font-size: 48px;
+      margin-bottom: 24px;
+    }
+    .cover h1 {
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+      color: #e94560;
+    }
+    .cover h2 {
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: #a8b2d8;
+      margin-bottom: 36px;
+    }
+    .cover .meta {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 24px 40px;
+      display: inline-block;
+      text-align: left;
+    }
+    .cover .meta p { margin-bottom: 6px; color: #ccd6f6; font-size: 0.95rem; }
+    .cover .meta strong { color: #e6f1ff; }
+    .cover .badge {
+      display: inline-block;
+      margin-top: 28px;
+      background: #e94560;
+      color: #fff;
+      padding: 6px 18px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Content wrapper ───────────────────────────────────────────────── */
+    .content {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 40px;
+    }
+
+    /* ── Section headers ───────────────────────────────────────────────── */
+    .section-title {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #0f3460;
+      border-bottom: 3px solid #e94560;
+      padding-bottom: 8px;
+      margin: 48px 0 20px;
+    }
+    .sub-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #16213e;
+      margin: 28px 0 10px;
+      padding-left: 12px;
+      border-left: 4px solid #0f3460;
+    }
+
+    /* ── Paragraph ─────────────────────────────────────────────────────── */
+    p { margin-bottom: 14px; }
+
+    /* ── Card ──────────────────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid #e0e6f0;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(15,52,96,0.07);
+    }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* ── Tables ────────────────────────────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(15,52,96,0.07);
+    }
+    thead tr { background: #0f3460; color: #fff; }
+    thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+    }
+    tbody tr { border-bottom: 1px solid #e8edf5; }
+    tbody tr:nth-child(even) { background: #f7f9fc; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td {
+      padding: 11px 16px;
+      font-size: 0.88rem;
+      vertical-align: top;
+    }
+
+    /* ── Code blocks ───────────────────────────────────────────────────── */
+    .code-block {
+      background: #0d1117;
+      color: #e6edf3;
+      border-radius: 10px;
+      padding: 18px 22px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      border: 1px solid #30363d;
+    }
+    .code-block .kw  { color: #ff7b72; }
+    .code-block .str { color: #a5d6ff; }
+    .code-block .cm  { color: #8b949e; font-style: italic; }
+    .code-block .fn  { color: #d2a8ff; }
+    .code-block .pr  { color: #79c0ff; }
+    .code-block .nm  { color: #ffa657; }
+
+    /* ── Commit timeline ───────────────────────────────────────────────── */
+    .timeline { position: relative; padding-left: 32px; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: #d0d9e8;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 22px;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -26px;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #0f3460;
+      background: #fff;
+    }
+    .timeline-item.feat::before  { background: #2da44e; border-color: #2da44e; }
+    .timeline-item.fix::before   { background: #e94560; border-color: #e94560; }
+    .timeline-item.merge::before { background: #0075ca; border-color: #0075ca; }
+    .timeline-item.ci::before    { background: #f0883e; border-color: #f0883e; }
+
+    .timeline-date {
+      font-size: 0.78rem;
+      color: #8a97b1;
+      margin-bottom: 2px;
+      font-family: monospace;
+    }
+    .timeline-commit {
+      font-size: 0.78rem;
+      color: #8a97b1;
+      font-family: monospace;
+      background: #f0f4fa;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+    .timeline-msg {
+      font-weight: 600;
+      color: #1a1a2e;
+      font-size: 0.92rem;
+    }
+    .timeline-author {
+      font-size: 0.8rem;
+      color: #6e7fa3;
+      margin-top: 2px;
+    }
+    .timeline-files {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: #3b4a6b;
+      background: #f4f7fc;
+      border-radius: 6px;
+      padding: 8px 12px;
+    }
+    .timeline-files span {
+      display: inline-block;
+      background: #e2e8f4;
+      border-radius: 4px;
+      padding: 1px 7px;
+      margin: 2px 3px 2px 0;
+      font-family: monospace;
+      font-size: 0.78rem;
+    }
+
+    /* ── Status badges ─────────────────────────────────────────────────── */
+    .badge-status {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 50px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .badge-feat  { background: #dafbe1; color: #1a7f37; }
+    .badge-fix   { background: #fde8ea; color: #cf222e; }
+    .badge-ci    { background: #fff3cd; color: #856404; }
+    .badge-chore { background: #f0f4fa; color: #57606a; }
+
+    /* ── Flow diagram ──────────────────────────────────────────────────── */
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .flow-step {
+      background: #0f3460;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+      min-width: 110px;
+    }
+    .flow-step.active { background: #2da44e; }
+    .flow-step.terminal { background: #e94560; }
+    .flow-arrow {
+      color: #8a97b1;
+      font-size: 1.4rem;
+      padding: 0 6px;
+    }
+
+    /* ── Impact boxes ──────────────────────────────────────────────────── */
+    .impact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .impact-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 18px 20px;
+      border: 1px solid #e0e6f0;
+      box-shadow: 0 2px 6px rgba(15,52,96,0.06);
+    }
+    .impact-box .icon { font-size: 28px; margin-bottom: 8px; }
+    .impact-box .label { font-size: 0.78rem; color: #6e7fa3; text-transform: uppercase; letter-spacing: 0.4px; }
+    .impact-box .value { font-size: 1.5rem; font-weight: 700; color: #0f3460; }
+
+    /* ── Callouts ──────────────────────────────────────────────────────── */
+    .callout {
+      border-left: 4px solid;
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 18px;
+    }
+    .callout.info    { background: #eaf4ff; border-color: #0075ca; }
+    .callout.warning { background: #fff8e6; border-color: #f0883e; }
+    .callout.success { background: #dafbe1; border-color: #2da44e; }
+    .callout p { margin-bottom: 0; font-size: 0.9rem; }
+
+    /* ── Architecture diagram ──────────────────────────────────────────── */
+    .arch-diagram {
+      background: #fff;
+      border: 1px solid #e0e6f0;
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .arch-layer {
+      background: #f4f7fc;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      border: 1px solid #d9e1f0;
+    }
+    .arch-layer .layer-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6e7fa3;
+      margin-bottom: 6px;
+    }
+    .arch-layer .components {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .arch-layer .component {
+      background: #0f3460;
+      color: #fff;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-family: monospace;
+    }
+    .arch-layer .component.new  { background: #2da44e; }
+    .arch-layer .component.mod  { background: #0075ca; }
+    .arch-layer .component.db   { background: #6f42c1; }
+    .arch-layer .arch-arrow {
+      text-align: center;
+      color: #8a97b1;
+      font-size: 1.3rem;
+      margin: -4px 0;
+    }
+
+    /* ── File tree ─────────────────────────────────────────────────────── */
+    .file-tree {
+      background: #0d1117;
+      color: #e6edf3;
+      border-radius: 10px;
+      padding: 18px 22px;
+      font-family: monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+      margin-bottom: 20px;
+      border: 1px solid #30363d;
+    }
+    .file-tree .new-file  { color: #3fb950; }
+    .file-tree .mod-file  { color: #58a6ff; }
+    .file-tree .dir       { color: #ffa657; }
+
+    /* ── TOC ───────────────────────────────────────────────────────────── */
+    .toc { background: #fff; border-radius: 12px; padding: 24px 28px; border: 1px solid #e0e6f0; }
+    .toc ol { padding-left: 22px; }
+    .toc li { margin-bottom: 8px; font-size: 0.95rem; }
+    .toc a { color: #0f3460; text-decoration: none; }
+    .toc a:hover { color: #e94560; }
+
+    /* ── Print button ──────────────────────────────────────────────────── */
+    .print-btn {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: #e94560;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(233,69,96,0.4);
+      z-index: 999;
+    }
+    .print-btn:hover { background: #c73652; }
+
+    hr { border: none; border-top: 1px solid #e0e6f0; margin: 40px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="logo">🛵</div>
+  <h1>Past Delivery History</h1>
+  <h2>Feature Documentation &amp; Codebase Change Analysis</h2>
+
+  <div class="meta">
+    <p><strong>Project:</strong> NopCommerce Team-7 — QuickCommerce Platform</p>
+    <p><strong>Feature Branch:</strong> <code>feature/past-delivery</code></p>
+    <p><strong>Merged Into:</strong> <code>develop</code></p>
+    <p><strong>Primary Commits:</strong> 9f58b31 · 955fbcd</p>
+    <p><strong>Authors:</strong> Kulwinder Singh, Shruti Kansal, Vanshika Mittal</p>
+    <p><strong>Delivery Date:</strong> 28 May 2026</p>
+    <p><strong>Document Date:</strong> 29 May 2026</p>
+  </div>
+
+  <span class="badge">INTERNAL — ENGINEERING REFERENCE</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- TABLE OF CONTENTS ────────────────────────────────────────────── -->
+  <h2 class="section-title">Table of Contents</h2>
+  <div class="toc">
+    <ol>
+      <li><a href="#overview">1. Feature Overview</a></li>
+      <li><a href="#impact">2. At-a-Glance Impact</a></li>
+      <li><a href="#timeline">3. Commit Timeline &amp; Change Narrative</a></li>
+      <li><a href="#architecture">4. System Architecture &amp; Affected Layers</a></li>
+      <li><a href="#files">5. File-by-File Changes</a></li>
+      <li><a href="#database">6. Database Migration</a></li>
+      <li><a href="#backend">7. Backend — Service &amp; API Changes</a></li>
+      <li><a href="#frontend">8. Frontend — Angular Components</a></li>
+      <li><a href="#dataflow">9. End-to-End Data Flow</a></li>
+      <li><a href="#api">10. API Reference</a></li>
+      <li><a href="#status-machine">11. Delivery Status State Machine</a></li>
+      <li><a href="#application-impact">12. Application Impact Analysis</a></li>
+      <li><a href="#related">13. Related Features &amp; Branches</a></li>
+      <li><a href="#known-issues">14. Known Limitations &amp; Future Work</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. OVERVIEW ─────────────────────────────────────────────────── -->
+  <h2 class="section-title" id="overview">1. Feature Overview</h2>
+  <div class="card">
+    <p>
+      The <strong>Past Delivery History</strong> feature provides riders on the QuickCommerce platform
+      with a dedicated, paginated view of all their previously completed (or failed) deliveries. Riders
+      can filter by date range and delivery status, and view a complete timeline of each delivery's
+      lifecycle — from assignment through pick-up, transit, and final delivery.
+    </p>
+    <p>
+      This feature closes the visibility gap that existed after a delivery moved to the
+      <em>Delivered</em> or <em>Failed</em> state, which previously caused those records to silently
+      disappear from the rider's active dashboard. It also introduces the infrastructure for earnings
+      reporting (order totals in INR) and acts as a foundation for future analytics dashboards.
+    </p>
+  </div>
+
+  <div class="callout info">
+    <p><strong>Scope:</strong> This document covers all code changes made to implement the Past Delivery
+    History feature, including the database migration that added per-status timestamp columns, the backend
+    service and API endpoint additions, and the Angular frontend component. It also covers the upstream
+    Rider Delivery Status Update feature (commit <code>955fbcd</code>) on which this feature depends.</p>
+  </div>
+
+  <!-- ── 2. IMPACT METRICS ────────────────────────────────────────────── -->
+  <h2 class="section-title" id="impact">2. At-a-Glance Impact</h2>
+  <div class="impact-grid">
+    <div class="impact-box">
+      <div class="icon">📁</div>
+      <div class="label">Files Changed (total)</div>
+      <div class="value">12</div>
+    </div>
+    <div class="impact-box">
+      <div class="icon">➕</div>
+      <div class="label">Lines Added</div>
+      <div class="value">~1,143</div>
+    </div>
+    <div class="impact-box">
+      <div class="icon">🗄️</div>
+      <div class="label">DB Columns Added</div>
+      <div class="value">3</div>
+    </div>
+    <div class="impact-box">
+      <div class="icon">🔗</div>
+      <div class="label">New API Endpoints</div>
+      <div class="value">2</div>
+    </div>
+    <div class="impact-box">
+      <div class="icon">🧩</div>
+      <div class="label">New Angular Components</div>
+      <div class="value">1</div>
+    </div>
+    <div class="impact-box">
+      <div class="icon">🔀</div>
+      <div class="label">New Routes</div>
+      <div class="value">2</div>
+    </div>
+  </div>
+
+  <!-- ── 3. COMMIT TIMELINE ───────────────────────────────────────────── -->
+  <h2 class="section-title" id="timeline">3. Commit Timeline &amp; Change Narrative</h2>
+
+  <p>
+    The following commits directly implement or enable the Past Delivery History feature.
+    Commits are listed in reverse-chronological order (newest first), matching
+    <code>git log origin/feature/past-delivery</code>.
+  </p>
+
+  <div class="timeline">
+
+    <div class="timeline-item merge">
+      <div class="timeline-date">2026-05-28 <span class="timeline-commit">c379022</span></div>
+      <div class="timeline-msg">Merge remote-tracking branch 'origin/develop' into feature/past-delivery</div>
+      <div class="timeline-author">Author: Kulwinder Singh &lt;kulwinder_singh@epam.com&gt;</div>
+    </div>
+
+    <div class="timeline-item feat">
+      <div class="timeline-date">2026-05-28 <span class="timeline-commit">9f58b31</span> <span class="badge-status badge-feat">FEAT</span></div>
+      <div class="timeline-msg">vie past delivery</div>
+      <div class="timeline-author">Author: Kulwinder Singh &lt;kulwinder_singh@epam.com&gt;</div>
+      <div class="timeline-files">
+        <strong>Core files added/changed:</strong><br/>
+        <span>rider-past-deliveries.component.ts</span>
+        <span>rider-past-deliveries.component.html</span>
+        <span>rider-past-deliveries.component.css</span>
+        <span>rider-api.service.ts</span>
+        <span>rider.models.ts</span>
+        <span>rider.routes.ts</span>
+        <span>rider-dashboard.component.ts/html</span>
+        <span>DeliveryOrderService.cs</span>
+        <span>IDeliveryOrderService.cs</span>
+        <span>RiderPortalApiController.cs</span>
+        <span>RouteProvider.cs</span>
+      </div>
+    </div>
+
+    <div class="timeline-item feat">
+      <div class="timeline-date">2026-05-28 <span class="timeline-commit">955fbcd</span> <span class="badge-status badge-feat">FEAT</span></div>
+      <div class="timeline-msg">feat: Rider delivery status update</div>
+      <div class="timeline-author">Author: shruti_kansal@epam.com</div>
+      <div class="timeline-files">
+        <strong>Key files:</strong><br/>
+        <span>AddDeliveryStatusTimestampsMigration.cs</span>
+        <span>DeliveryOrder.cs</span>
+        <span>DeliveryOrderService.cs</span>
+        <span>IDeliveryOrderService.cs</span>
+        <span>RiderPortalApiController.cs</span>
+        <span>rider-accepted-orders.component</span>
+        <span>rider-order-details.component</span>
+        <span>rider.models.ts</span>
+        <span>proxy.conf.json</span>
+      </div>
+    </div>
+
+    <div class="timeline-item feat">
+      <div class="timeline-date">2026-05-28 <span class="timeline-commit">494afc7</span> <span class="badge-status badge-feat">FEAT</span></div>
+      <div class="timeline-msg">Implement rider delivery workflow UI and order selection flow</div>
+      <div class="timeline-author">Author: Vanshika Mittal</div>
+    </div>
+
+    <div class="timeline-item fix">
+      <div class="timeline-date">2026-05-28 <span class="timeline-commit">ba95246</span> <span class="badge-status badge-fix">FIX</span></div>
+      <div class="timeline-msg">fix: resolve merge conflict — keep both RiderManagement and WebApi.Frontend project references</div>
+      <div class="timeline-author">Author: Kulwinder Singh</div>
+    </div>
+
+    <div class="timeline-item fix">
+      <div class="timeline-date">2026-05-28 <span class="timeline-commit">d6d118f</span> <span class="badge-status badge-chore">CHORE</span></div>
+      <div class="timeline-msg">fix: add coverage/ to gitignore</div>
+      <div class="timeline-author">Author: Kulwinder Singh</div>
+    </div>
+
+  </div>
+
+  <!-- ── 4. ARCHITECTURE ─────────────────────────────────────────────── -->
+  <div class="page-break"></div>
+  <h2 class="section-title" id="architecture">4. System Architecture &amp; Affected Layers</h2>
+
+  <div class="arch-diagram">
+    <div class="arch-layer">
+      <div class="layer-name">Frontend — Angular SPA (Rider Portal)</div>
+      <div class="components">
+        <span class="component new">RiderPastDeliveriesComponent</span>
+        <span class="component mod">RiderDashboardComponent</span>
+        <span class="component mod">RiderApiService</span>
+        <span class="component mod">rider.models.ts</span>
+        <span class="component mod">rider.routes.ts</span>
+      </div>
+    </div>
+    <div class="arch-layer" style="text-align:center; background: transparent; border: none; padding: 4px;">
+      ↕ HTTP (JSON)
+    </div>
+    <div class="arch-layer">
+      <div class="layer-name">Backend — ASP.NET Core API Layer</div>
+      <div class="components">
+        <span class="component new">GET /api/rider/past-deliveries</span>
+        <span class="component new">PATCH /api/rider/delivery-status</span>
+        <span class="component mod">RiderPortalApiController</span>
+        <span class="component mod">RouteProvider</span>
+      </div>
+    </div>
+    <div class="arch-layer" style="text-align:center; background: transparent; border: none; padding: 4px;">
+      ↕ Async Service calls
+    </div>
+    <div class="arch-layer">
+      <div class="layer-name">Business Logic — Service Layer (Plugin: RiderManagement)</div>
+      <div class="components">
+        <span class="component new">IDeliveryOrderService.GetPastDeliveriesAsync()</span>
+        <span class="component new">IDeliveryOrderService.UpdateDeliveryStatusAsync()</span>
+        <span class="component mod">DeliveryOrderService</span>
+      </div>
+    </div>
+    <div class="arch-layer" style="text-align:center; background: transparent; border: none; padding: 4px;">
+      ↕ ORM (Nop.Data IRepository&lt;T&gt;)
+    </div>
+    <div class="arch-layer">
+      <div class="layer-name">Data Layer — SQL Server</div>
+      <div class="components">
+        <span class="component db">RiderManagement_DeliveryOrder</span>
+        <span class="component new db">PickedUpOnUtc (new)</span>
+        <span class="component new db">InTransitOnUtc (new)</span>
+        <span class="component new db">DeliveredOnUtc (new)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warning">
+    <p><strong>Plugin boundaries:</strong> The feature spans two plugins —
+    <code>Nop.Plugin.Misc.RiderManagement</code> (domain, services, migrations) and
+    <code>Nop.Plugin.Misc.WebApi.Frontend</code> (controllers, routes). Both must be installed
+    and enabled in the nopCommerce admin panel for the feature to work.</p>
+  </div>
+
+  <!-- ── 5. FILES ────────────────────────────────────────────────────── -->
+  <h2 class="section-title" id="files">5. File-by-File Changes</h2>
+
+  <p>Legend: <strong style="color:#2da44e">NEW</strong> = file created &nbsp;|&nbsp;
+             <strong style="color:#0075ca">MOD</strong> = file modified</p>
+
+  <div class="file-tree">
+    <span class="dir">Frontend/src/app/features/rider/</span><br/>
+    &nbsp;&nbsp;<span class="new-file">+ rider-past-deliveries.component.ts     [NEW]</span><br/>
+    &nbsp;&nbsp;<span class="new-file">+ rider-past-deliveries.component.html   [NEW]</span><br/>
+    &nbsp;&nbsp;<span class="new-file">+ rider-past-deliveries.component.css    [NEW]</span><br/>
+    &nbsp;&nbsp;<span class="mod-file">~ rider-api.service.ts                   [MOD] — getPastDeliveries()</span><br/>
+    &nbsp;&nbsp;<span class="mod-file">~ rider.models.ts                        [MOD] — PastDelivery, PastDeliveriesResponse, PastDeliveriesFilter</span><br/>
+    &nbsp;&nbsp;<span class="mod-file">~ rider.routes.ts                        [MOD] — /rider/past-deliveries route</span><br/>
+    &nbsp;&nbsp;<span class="mod-file">~ rider-dashboard.component.ts/html      [MOD] — "History" nav link</span><br/><br/>
+
+    <span class="dir">src/Plugins/Nop.Plugin.Misc.RiderManagement/</span><br/>
+    &nbsp;&nbsp;<span class="new-file">+ Data/Migrations/AddDeliveryStatusTimestampsMigration.cs   [NEW]</span><br/>
+    &nbsp;&nbsp;<span class="mod-file">~ Domains/DeliveryOrder.cs                                  [MOD] — 3 new timestamp props</span><br/>
+    &nbsp;&nbsp;<span class="mod-file">~ Services/DeliveryOrderService.cs                          [MOD] — GetPastDeliveriesAsync(), UpdateDeliveryStatusAsync()</span><br/>
+    &nbsp;&nbsp;<span class="mod-file">~ Services/IDeliveryOrderService.cs                         [MOD] — interface additions</span><br/><br/>
+
+    <span class="dir">src/Plugins/Nop.Plugin.Misc.WebApi.Frontend/</span><br/>
+    &nbsp;&nbsp;<span class="mod-file">~ Controllers/RiderPortalApiController.cs   [MOD] — PastDeliveries(), UpdateDeliveryStatus() actions</span><br/>
+    &nbsp;&nbsp;<span class="mod-file">~ Infrastructure/RouteProvider.cs           [MOD] — 2 new route registrations</span>
+  </div>
+
+  <h3 class="sub-title">Detailed change summary per file</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>File</th>
+        <th>Type</th>
+        <th>What Changed</th>
+        <th>Impact</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>rider-past-deliveries.component.ts</code></td>
+        <td><span class="badge-status badge-feat">NEW</span></td>
+        <td>116-line Angular standalone component. Manages filter state (dateFrom, dateTo, statusId), pagination, and calls <code>RiderApiService.getPastDeliveries()</code>. Uses Angular signals for reactive state.</td>
+        <td>Introduces the entire delivery history page to the rider portal SPA.</td>
+      </tr>
+      <tr>
+        <td><code>rider-past-deliveries.component.html</code></td>
+        <td><span class="badge-status badge-feat">NEW</span></td>
+        <td>107-line template with filter form, loading/error/empty states, delivery card list with timeline row, and pagination controls.</td>
+        <td>Renders delivery history UI. Timeline row shows Assigned → PickedUp → InTransit → Delivered progression.</td>
+      </tr>
+      <tr>
+        <td><code>rider-past-deliveries.component.css</code></td>
+        <td><span class="badge-status badge-feat">NEW</span></td>
+        <td>321 lines of scoped styles matching the glass-morphism design system used in the rest of the rider portal.</td>
+        <td>Visual presentation only — no logic impact.</td>
+      </tr>
+      <tr>
+        <td><code>rider-api.service.ts</code></td>
+        <td><span class="badge-status badge-ci">MOD</span></td>
+        <td>Added <code>getPastDeliveries(filter: PastDeliveriesFilter)</code> method. Builds <code>HttpParams</code> from filter object and calls <code>GET /api/rider/past-deliveries</code>.</td>
+        <td>All API communication for the history page goes through this new method.</td>
+      </tr>
+      <tr>
+        <td><code>rider.models.ts</code></td>
+        <td><span class="badge-status badge-ci">MOD</span></td>
+        <td>Added three new TypeScript interfaces: <code>PastDelivery</code>, <code>PastDeliveriesResponse</code>, <code>PastDeliveriesFilter</code>. Also added <code>DeliveryStatusId</code> enum and status update request/response interfaces.</td>
+        <td>Type contracts between frontend and API. Ensures compile-time safety for all history-related data shapes.</td>
+      </tr>
+      <tr>
+        <td><code>rider.routes.ts</code></td>
+        <td><span class="badge-status badge-ci">MOD</span></td>
+        <td>Registered <code>/rider/past-deliveries</code> route pointing to <code>RiderPastDeliveriesComponent</code> with <code>customerAuthGuard</code> and <code>riderOnlyGuard</code>.</td>
+        <td>Unauthenticated or non-rider users are redirected away from the history page.</td>
+      </tr>
+      <tr>
+        <td><code>rider-dashboard.component.ts/html</code></td>
+        <td><span class="badge-status badge-ci">MOD</span></td>
+        <td>Added navigation link to <code>/rider/past-deliveries</code> in the dashboard header/nav.</td>
+        <td>Makes the history page discoverable from the rider's primary screen.</td>
+      </tr>
+      <tr>
+        <td><code>AddDeliveryStatusTimestampsMigration.cs</code></td>
+        <td><span class="badge-status badge-feat">NEW</span></td>
+        <td>FluentMigrator migration tagged <code>2026/05/28 00:00:00:0000004</code>. Adds <code>PickedUpOnUtc</code>, <code>InTransitOnUtc</code>, <code>DeliveredOnUtc</code> (nullable DateTime2) columns to <code>RiderManagement_DeliveryOrder</code>.</td>
+        <td><strong>Database schema change.</strong> Idempotent — checks column existence before altering. Safe to run on existing installations.</td>
+      </tr>
+      <tr>
+        <td><code>DeliveryOrder.cs</code></td>
+        <td><span class="badge-status badge-ci">MOD</span></td>
+        <td>Three new nullable <code>DateTime?</code> properties: <code>PickedUpOnUtc</code>, <code>InTransitOnUtc</code>, <code>DeliveredOnUtc</code>, each with XML doc comments.</td>
+        <td>Domain model update. These properties are persisted to the new DB columns and surfaced in API responses.</td>
+      </tr>
+      <tr>
+        <td><code>DeliveryOrderService.cs</code></td>
+        <td><span class="badge-status badge-ci">MOD</span></td>
+        <td>Added two major methods: (1) <code>UpdateDeliveryStatusAsync()</code> — enforces forward-only state transitions and timestamps each step; (2) <code>GetPastDeliveriesAsync()</code> — paginated query filtered by riderId, date range, and statusId.</td>
+        <td>Core business logic for delivery lifecycle management and history retrieval. Includes idempotency guards and race-condition protection.</td>
+      </tr>
+      <tr>
+        <td><code>IDeliveryOrderService.cs</code></td>
+        <td><span class="badge-status badge-ci">MOD</span></td>
+        <td>Interface additions corresponding to the new service methods.</td>
+        <td>DI contract update — allows mocking in tests.</td>
+      </tr>
+      <tr>
+        <td><code>RiderPortalApiController.cs</code></td>
+        <td><span class="badge-status badge-ci">MOD</span></td>
+        <td>Added two controller actions: <code>PastDeliveries()</code> (GET, paginated) and <code>UpdateDeliveryStatus()</code> (PATCH). Also closes the nopCommerce order when status reaches Delivered.</td>
+        <td>Exposes delivery history and status-update features over HTTP. When a delivery is marked Delivered, <code>OrderStatus.Complete</code> is set on the corresponding NopCommerce order.</td>
+      </tr>
+      <tr>
+        <td><code>RouteProvider.cs</code></td>
+        <td><span class="badge-status badge-ci">MOD</span></td>
+        <td>Registered routes: <code>api/rider/past-deliveries</code> and <code>api/rider/delivery-status</code>.</td>
+        <td>Without these, the Angular app would get 404 responses for the new endpoints.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ── 6. DATABASE MIGRATION ───────────────────────────────────────── -->
+  <div class="page-break"></div>
+  <h2 class="section-title" id="database">6. Database Migration</h2>
+
+  <h3 class="sub-title">Migration: AddDeliveryStatusTimestampsMigration</h3>
+  <p>
+    This migration alters the <code>RiderManagement_DeliveryOrder</code> table to add three nullable
+    DateTime2 columns that record the exact UTC timestamp when each delivery milestone was reached.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Column Name</th><th>Data Type</th><th>Nullable</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>PickedUpOnUtc</code></td><td>DateTime2</td><td>Yes</td><td>When rider confirmed order pick-up</td></tr>
+      <tr><td><code>InTransitOnUtc</code></td><td>DateTime2</td><td>Yes</td><td>When rider started transit to customer</td></tr>
+      <tr><td><code>DeliveredOnUtc</code></td><td>DateTime2</td><td>Yes</td><td>When rider confirmed delivery to customer</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    The existing <code>AssignedAtUtc</code> column (added in an earlier sprint) already covered the
+    assignment timestamp. Together, all four columns form a complete audit trail of the delivery lifecycle.
+  </p>
+
+  <div class="callout success">
+    <p><strong>Safety:</strong> Each column addition is guarded with <code>if (!Schema.Table(...).Column(...).Exists())</code>,
+    making the migration idempotent and safe to apply to environments that may have partially migrated schemas
+    (e.g., CI environments that run nopCommerce with an existing database).</p>
+  </div>
+
+  <h3 class="sub-title">Updated Table Schema: RiderManagement_DeliveryOrder</h3>
+  <table>
+    <thead>
+      <tr><th>Column</th><th>Type</th><th>Nullable</th><th>Since</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>Id</code></td><td>int</td><td>No</td><td>Sprint 1</td><td>Primary key (auto-increment)</td></tr>
+      <tr><td><code>OrderId</code></td><td>int</td><td>No</td><td>Sprint 1</td><td>FK → nopCommerce Order.Id</td></tr>
+      <tr><td><code>RiderId</code></td><td>int</td><td>Yes</td><td>Sprint 1</td><td>FK → RiderManagement_Rider.Id</td></tr>
+      <tr><td><code>StatusId</code></td><td>int</td><td>No</td><td>Sprint 1</td><td>Enum value of DeliveryOrderStatus</td></tr>
+      <tr><td><code>CreatedOnUtc</code></td><td>DateTime2</td><td>No</td><td>Sprint 1</td><td>Record creation timestamp</td></tr>
+      <tr><td><code>AssignedAtUtc</code></td><td>DateTime2</td><td>Yes</td><td>Sprint 2</td><td>Rider assignment timestamp</td></tr>
+      <tr><td><code>PickedUpOnUtc</code></td><td>DateTime2</td><td>Yes</td><td><strong>Sprint 3 (this PR)</strong></td><td>Pick-up confirmation timestamp</td></tr>
+      <tr><td><code>InTransitOnUtc</code></td><td>DateTime2</td><td>Yes</td><td><strong>Sprint 3 (this PR)</strong></td><td>In-transit start timestamp</td></tr>
+      <tr><td><code>DeliveredOnUtc</code></td><td>DateTime2</td><td>Yes</td><td><strong>Sprint 3 (this PR)</strong></td><td>Delivery confirmation timestamp</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ── 7. BACKEND ──────────────────────────────────────────────────── -->
+  <h2 class="section-title" id="backend">7. Backend — Service &amp; API Changes</h2>
+
+  <h3 class="sub-title">DeliveryOrderService: UpdateDeliveryStatusAsync</h3>
+  <p>
+    The new <code>UpdateDeliveryStatusAsync(int orderId, int riderId, DeliveryOrderStatus newStatus)</code>
+    method enforces a <strong>forward-only state machine</strong> for delivery progression. Allowed
+    transitions are defined in a dictionary:
+  </p>
+
+  <div class="code-block">
+<span class="kw">var</span> allowedTransitions = <span class="kw">new</span> Dictionary&lt;DeliveryOrderStatus, DeliveryOrderStatus&gt;
+{
+    { DeliveryOrderStatus.Assigned,  DeliveryOrderStatus.PickedUp  },
+    { DeliveryOrderStatus.PickedUp,  DeliveryOrderStatus.InTransit },
+    { DeliveryOrderStatus.InTransit, DeliveryOrderStatus.Delivered }
+};
+</div>
+
+  <p>The method also:</p>
+  <ul style="margin-left:22px; margin-bottom:16px;">
+    <li>Validates rider ownership (prevents one rider from updating another's order)</li>
+    <li>Blocks duplicate transitions (idempotency)</li>
+    <li>Blocks updates to already-Delivered orders</li>
+    <li>Records the UTC timestamp for each milestone step</li>
+  </ul>
+
+  <h3 class="sub-title">DeliveryOrderService: GetPastDeliveriesAsync</h3>
+  <p>
+    Returns a paginated list of <code>DeliveryOrder</code> records where the status is
+    <em>Delivered</em> (4) or <em>Failed</em> (5), optionally filtered by date range and status:
+  </p>
+
+  <div class="code-block">
+<span class="kw">public async</span> Task&lt;(<span class="pr">IList</span>&lt;DeliveryOrder&gt; Items, <span class="kw">int</span> TotalCount)&gt; <span class="fn">GetPastDeliveriesAsync</span>(
+    <span class="kw">int</span> riderId,
+    DateTime? dateFrom, DateTime? dateTo,
+    <span class="kw">int</span>? statusId,
+    <span class="kw">int</span> pageIndex, <span class="kw">int</span> pageSize)
+</div>
+
+  <h3 class="sub-title">RiderPortalApiController: GET /api/rider/past-deliveries</h3>
+  <p>
+    Authenticates the current rider via the existing nopCommerce customer session cookie
+    (<code>GetAuthenticatedCustomerAsync()</code>), then calls the service layer. The controller
+    enriches each delivery record with:
+  </p>
+  <ul style="margin-left:22px; margin-bottom:16px;">
+    <li>Customer name (from shipping address or billing address fallback)</li>
+    <li>Delivery address (Address1 + City)</li>
+    <li>Order total converted to INR (×83)</li>
+    <li>All four timestamp fields</li>
+  </ul>
+
+  <h3 class="sub-title">RiderPortalApiController: PATCH /api/rider/delivery-status</h3>
+  <p>
+    Delegates to <code>UpdateDeliveryStatusAsync()</code>. Additionally, when the new status is
+    <em>Delivered</em>, the corresponding nopCommerce <code>Order</code> record is marked as
+    <code>OrderStatus.Complete</code>. This ties the rider delivery lifecycle directly into the
+    nopCommerce order management system.
+  </p>
+
+  <div class="callout warning">
+    <p><strong>Currency note:</strong> Order totals are stored in USD by nopCommerce. The current
+    implementation multiplies by a hardcoded factor of 83 to convert to INR. A TODO comment in the
+    code notes this should be replaced with a dynamic exchange-rate lookup.</p>
+  </div>
+
+  <!-- ── 8. FRONTEND ─────────────────────────────────────────────────── -->
+  <div class="page-break"></div>
+  <h2 class="section-title" id="frontend">8. Frontend — Angular Components</h2>
+
+  <h3 class="sub-title">RiderPastDeliveriesComponent</h3>
+  <p>
+    A standalone Angular component at <code>/rider/past-deliveries</code>. It is built using the
+    Angular Signals API for reactive state management, avoiding the complexity of RxJS BehaviorSubjects.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Property / Method</th><th>Type</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>responseState</code></td><td>Signal&lt;PastDeliveriesResponse | null&gt;</td><td>Holds the current page's API response</td></tr>
+      <tr><td><code>loadingState</code></td><td>Signal&lt;boolean&gt;</td><td>Controls loading indicator visibility</td></tr>
+      <tr><td><code>errorState</code></td><td>Signal&lt;string&gt;</td><td>Holds API error message, if any</td></tr>
+      <tr><td><code>dateFrom / dateTo</code></td><td>string</td><td>Bound to date filter inputs via ngModel</td></tr>
+      <tr><td><code>statusId</code></td><td>string</td><td>'' = all, '4' = Delivered, '5' = Failed</td></tr>
+      <tr><td><code>PAGE_SIZE</code></td><td>const = 10</td><td>Items per page</td></tr>
+      <tr><td><code>load(pageIndex)</code></td><td>private</td><td>Fetches one page from the API with current filters</td></tr>
+      <tr><td><code>applyFilters()</code></td><td>public</td><td>Resets to page 0 with current filter values</td></tr>
+      <tr><td><code>clearFilters()</code></td><td>public</td><td>Resets all filter fields and reloads page 0</td></tr>
+      <tr><td><code>prevPage() / nextPage()</code></td><td>public</td><td>Pagination navigation</td></tr>
+      <tr><td><code>goToDashboard()</code></td><td>public</td><td>Navigates to /rider/dashboard</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub-title">UI Sections (Template)</h3>
+  <table>
+    <thead>
+      <tr><th>Section</th><th>Shown when</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Header</td><td>Always</td><td>Page title "Delivery History" + "← Dashboard" button</td></tr>
+      <tr><td>Filter bar</td><td>Always</td><td>Date From / Date To / Status dropdown + Apply / Clear buttons</td></tr>
+      <tr><td>Loading indicator</td><td><code>loading === true</code></td><td>Text "Loading delivery history..."</td></tr>
+      <tr><td>Error card</td><td><code>!loading &amp;&amp; errorMessage</code></td><td>Shows error from API</td></tr>
+      <tr><td>Results summary</td><td><code>!loading &amp;&amp; !error</code></td><td>"N deliveries found"</td></tr>
+      <tr><td>Empty state card</td><td><code>!loading &amp;&amp; items.length === 0</code></td><td>First-time empty state message</td></tr>
+      <tr><td>Delivery card list</td><td><code>items.length &gt; 0</code></td><td>Per-order cards with status, customer, address, earnings, timeline</td></tr>
+      <tr><td>Timeline row (per card)</td><td>Always within card</td><td>Assigned → Picked Up → In Transit → Delivered with step highlighting</td></tr>
+      <tr><td>Pagination</td><td><code>totalPages &gt; 1</code></td><td>Prev / Page X of Y / Next</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub-title">Angular Route Guard Protection</h3>
+  <p>The <code>/rider/past-deliveries</code> route is protected by two guards:</p>
+  <ul style="margin-left:22px; margin-bottom:14px;">
+    <li><strong>customerAuthGuard</strong>: Redirects unauthenticated users to the nopCommerce login page</li>
+    <li><strong>riderOnlyGuard</strong>: Redirects users who have not completed rider onboarding</li>
+  </ul>
+
+  <!-- ── 9. DATA FLOW ────────────────────────────────────────────────── -->
+  <h2 class="section-title" id="dataflow">9. End-to-End Data Flow</h2>
+
+  <h3 class="sub-title">Fetching Past Deliveries</h3>
+  <div class="flow-diagram">
+    <div class="flow-step">Rider opens<br/>/rider/past-deliveries</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Guards validate<br/>auth + rider</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">ngOnInit calls<br/>load(0)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">RiderApiService<br/>GET /api/rider/past-deliveries</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">RiderPortalApiController<br/>PastDeliveries()</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">DeliveryOrderService<br/>GetPastDeliveriesAsync()</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step active">SQL query<br/>RiderManagement_DeliveryOrder</div>
+  </div>
+  <br/>
+  <div class="flow-diagram">
+    <div class="flow-step active">DB returns rows</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Controller enriches<br/>with Order + Address</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">JSON response<br/>PastDeliveriesResponse</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">responseState.set(res)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Template renders<br/>delivery cards</div>
+  </div>
+
+  <h3 class="sub-title">Updating Delivery Status</h3>
+  <div class="flow-diagram">
+    <div class="flow-step">Rider taps<br/>status button</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">updateDeliveryStatus()<br/>in component</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">PATCH /api/rider<br/>/delivery-status</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">UpdateDeliveryStatusAsync()<br/>validates transition</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">DB row updated<br/>with timestamp</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step terminal">If Delivered:<br/>Order → Complete</div>
+  </div>
+
+  <!-- ── 10. API REFERENCE ───────────────────────────────────────────── -->
+  <div class="page-break"></div>
+  <h2 class="section-title" id="api">10. API Reference</h2>
+
+  <h3 class="sub-title">GET /api/rider/past-deliveries</h3>
+  <table>
+    <thead><tr><th>Query Param</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>pageIndex</code></td><td>int</td><td>0</td><td>0-based page number</td></tr>
+      <tr><td><code>pageSize</code></td><td>int</td><td>10</td><td>Items per page (clamped to 1–50)</td></tr>
+      <tr><td><code>dateFrom</code></td><td>string (yyyy-MM-dd)</td><td>—</td><td>Filter: created on or after this date</td></tr>
+      <tr><td><code>dateTo</code></td><td>string (yyyy-MM-dd)</td><td>—</td><td>Filter: created on or before this date (inclusive, end-of-day)</td></tr>
+      <tr><td><code>statusId</code></td><td>int?</td><td>—</td><td>4 = Delivered only, 5 = Failed only, omit = both</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>Response shape:</strong></p>
+  <div class="code-block">
+{
+  <span class="pr">"items"</span>: [
+    {
+      <span class="pr">"orderId"</span>: 101,
+      <span class="pr">"deliveryOrderId"</span>: 42,
+      <span class="pr">"customOrderNumber"</span>: <span class="str">"ORD-101"</span>,
+      <span class="pr">"orderTotal"</span>: 1245.00,       <span class="cm">// INR</span>
+      <span class="pr">"currencyCode"</span>: <span class="str">"INR"</span>,
+      <span class="pr">"deliveryStatus"</span>: <span class="str">"Delivered"</span>,
+      <span class="pr">"deliveryStatusId"</span>: 4,
+      <span class="pr">"customerName"</span>: <span class="str">"Priya Sharma"</span>,
+      <span class="pr">"deliveryAddress"</span>: <span class="str">"42 MG Road, Bengaluru"</span>,
+      <span class="pr">"assignedAtUtc"</span>: <span class="str">"2026-05-28T10:30:00Z"</span>,
+      <span class="pr">"pickedUpOnUtc"</span>: <span class="str">"2026-05-28T10:45:00Z"</span>,
+      <span class="pr">"inTransitOnUtc"</span>: <span class="str">"2026-05-28T10:50:00Z"</span>,
+      <span class="pr">"deliveredOnUtc"</span>: <span class="str">"2026-05-28T11:15:00Z"</span>,
+      <span class="pr">"createdOnUtc"</span>: <span class="str">"2026-05-28T10:25:00Z"</span>
+    }
+  ],
+  <span class="pr">"totalCount"</span>: 27,
+  <span class="pr">"pageIndex"</span>: 0,
+  <span class="pr">"pageSize"</span>: 10,
+  <span class="pr">"totalPages"</span>: 3
+}
+  </div>
+
+  <h3 class="sub-title">PATCH /api/rider/delivery-status</h3>
+  <p><strong>Request body:</strong></p>
+  <div class="code-block">
+{ <span class="pr">"orderId"</span>: 101, <span class="pr">"status"</span>: 4 }   <span class="cm">// status: enum int (see State Machine section)</span>
+  </div>
+  <p><strong>Response body:</strong></p>
+  <div class="code-block">
+{ <span class="pr">"success"</span>: <span class="kw">true</span>, <span class="pr">"message"</span>: <span class="str">"Order marked as Delivered"</span> }
+  </div>
+  <p><strong>Error codes:</strong> 400 (invalid transition or bad payload) · 401 (not authenticated) · 404 (rider/order not found)</p>
+
+  <!-- ── 11. STATE MACHINE ───────────────────────────────────────────── -->
+  <h2 class="section-title" id="status-machine">11. Delivery Status State Machine</h2>
+
+  <table>
+    <thead>
+      <tr><th>StatusId</th><th>Enum Value</th><th>Label</th><th>Next Allowed Status</th><th>Timestamp Set</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>Pending</td><td>Pending</td><td>Assigned (on AcceptOrder)</td><td><code>AssignedAtUtc</code></td></tr>
+      <tr><td>1</td><td>Assigned</td><td>Assigned</td><td>PickedUp</td><td><code>AssignedAtUtc</code></td></tr>
+      <tr><td>2</td><td>PickedUp</td><td>Picked Up</td><td>InTransit</td><td><code>PickedUpOnUtc</code></td></tr>
+      <tr><td>3</td><td>InTransit</td><td>Out for Delivery</td><td>Delivered</td><td><code>InTransitOnUtc</code></td></tr>
+      <tr><td>4</td><td>Delivered</td><td>Delivered</td><td><em>Terminal — no further transitions</em></td><td><code>DeliveredOnUtc</code></td></tr>
+      <tr><td>5</td><td>Failed</td><td>Failed</td><td><em>Terminal</em></td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <p><strong>State machine enforcement:</strong> The backend service rejects any transition that does not
+    follow the sequential order (e.g., attempting to jump from Assigned to Delivered will return
+    <code>400 Bad Request</code>). This prevents data integrity issues from race conditions or client-side
+    bugs. Already-terminal orders (Delivered, Failed) cannot be updated.</p>
+  </div>
+
+  <!-- ── 12. APPLICATION IMPACT ──────────────────────────────────────── -->
+  <div class="page-break"></div>
+  <h2 class="section-title" id="application-impact">12. Application Impact Analysis</h2>
+
+  <h3 class="sub-title">Before This Feature</h3>
+  <div class="card">
+    <p>
+      Before these changes, once a delivery order reached <em>Delivered</em> or <em>Failed</em> status,
+      it disappeared from the rider's view. There was no way for a rider to review their past work,
+      verify earnings, or look up delivery details after the fact.
+    </p>
+    <p>
+      The <code>DeliveryOrder</code> table did not record the timestamps at which individual status
+      milestones were reached — only the <code>CreatedOnUtc</code> and (after Sprint 2) <code>AssignedAtUtc</code>
+      columns existed. This made it impossible to report delivery duration or pick-up wait times.
+    </p>
+    <p>
+      The delivery status could not be progressed from the frontend — the <code>UpdateDeliveryStatus</code>
+      endpoint and its backing service method did not exist. Status changes could only be made from the
+      nopCommerce admin panel.
+    </p>
+  </div>
+
+  <h3 class="sub-title">After This Feature</h3>
+  <div class="card">
+    <p>
+      Riders have a dedicated History page accessible via <code>/rider/past-deliveries</code> from their
+      dashboard. They can review all past deliveries with full timeline detail, filter by date and status,
+      and navigate through paginated results.
+    </p>
+    <p>
+      The database now records a precise UTC timestamp for each of the four delivery milestones. This data
+      is the foundation for future analytics: average delivery time, pick-up delay, geographic performance
+      heatmaps, and earnings breakdowns.
+    </p>
+    <p>
+      Riders can self-service the entire delivery lifecycle from their mobile portal — progressing from
+      Assigned → Picked Up → In Transit → Delivered without admin intervention. When a delivery is
+      completed, the corresponding nopCommerce order is automatically moved to <code>OrderStatus.Complete</code>.
+    </p>
+  </div>
+
+  <h3 class="sub-title">Performance Considerations</h3>
+  <table>
+    <thead><tr><th>Area</th><th>Consideration</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Pagination</td>
+        <td>Large riders may have thousands of past deliveries</td>
+        <td>Server-side pagination with configurable page size (max 50). Only the requested page is fetched from SQL.</td>
+      </tr>
+      <tr>
+        <td>N+1 queries</td>
+        <td>Controller fetches Order + Address for each delivery in a loop</td>
+        <td>Acceptable at current scale (~10 items/page). Future: batch fetch orders and addresses with <code>IN</code> queries.</td>
+      </tr>
+      <tr>
+        <td>DB Index</td>
+        <td>Queries filter on <code>RiderId</code>, <code>StatusId</code>, <code>CreatedOnUtc</code></td>
+        <td>Recommend adding composite index <code>(RiderId, StatusId, CreatedOnUtc DESC)</code> for production.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub-title">Security Impact</h3>
+  <table>
+    <thead><tr><th>Control</th><th>Implementation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Authentication</td>
+        <td>All rider API endpoints call <code>GetAuthenticatedCustomerAsync()</code> — uses existing nopCommerce session cookie. No new auth surface.</td>
+      </tr>
+      <tr>
+        <td>Authorization</td>
+        <td>Past deliveries endpoint fetches the rider record by <code>customer.Id</code> — riders can only see their own history.</td>
+      </tr>
+      <tr>
+        <td>Status update ownership</td>
+        <td><code>UpdateDeliveryStatusAsync()</code> validates that <code>deliveryOrder.RiderId == riderId</code> before allowing any update.</td>
+      </tr>
+      <tr>
+        <td>Input validation</td>
+        <td>Date parameters parsed with <code>DateTime.TryParse()</code>; invalid dates are silently ignored (no filter applied). Page size clamped to 1–50.</td>
+      </tr>
+      <tr>
+        <td>CSRF</td>
+        <td>PATCH endpoint uses <code>[IgnoreAntiforgeryToken]</code> — acceptable because the Angular SPA uses same-origin credential cookies, not form tokens.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ── 13. RELATED FEATURES ───────────────────────────────────────── -->
+  <h2 class="section-title" id="related">13. Related Features &amp; Branches</h2>
+
+  <table>
+    <thead>
+      <tr><th>Branch</th><th>Relation</th><th>Key Commits</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>feature/1016-active-delivery-view</code></td>
+        <td>Predecessor — implements the active order list and order details views. Past deliveries is the next step after an active delivery ends.</td>
+        <td>494afc7, 94b9db7, 000d827</td>
+      </tr>
+      <tr>
+        <td><code>feature/1013-quick-delivery-status</code></td>
+        <td>Direct dependency — adds the status-update endpoint and DB timestamps that past deliveries reads from.</td>
+        <td>955fbcd</td>
+      </tr>
+      <tr>
+        <td><code>feature/push-delivery-integration</code></td>
+        <td>Sibling — adds push notifications when a delivery order is assigned to a rider. Status updates from this feature trigger those notifications.</td>
+        <td>5f7219b, 94c85e3</td>
+      </tr>
+      <tr>
+        <td><code>feature/1023-rider-login</code></td>
+        <td>Upstream — implements the rider authentication flow which the auth guards in the past-deliveries route depend on.</td>
+        <td>38c9124, 8887391</td>
+      </tr>
+      <tr>
+        <td><code>feature/order-feed</code></td>
+        <td>Sibling — implements the pending order feed that riders see before accepting. Accepted orders become the active deliveries that eventually appear in history.</td>
+        <td>100e8c2, 8072693</td>
+      </tr>
+      <tr>
+        <td><code>develop</code></td>
+        <td>Integration branch. All the above features merge here before production release.</td>
+        <td>4c46091</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ── 14. KNOWN LIMITATIONS ──────────────────────────────────────── -->
+  <h2 class="section-title" id="known-issues">14. Known Limitations &amp; Future Work</h2>
+
+  <table>
+    <thead><tr><th>Issue / TODO</th><th>Location in Code</th><th>Priority</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Hardcoded USD → INR conversion (×83). Should use a live exchange-rate service.</td>
+        <td><code>RiderPortalApiController.cs</code> — OrderDetails, PastDeliveries, ActiveDeliveries actions</td>
+        <td>Medium</td>
+      </tr>
+      <tr>
+        <td>No dedicated <code>DeliveryInstructions</code> column — currently reads from <code>CheckoutAttributeDescription</code></td>
+        <td><code>RiderPortalApiController.cs</code> — OrderDetails action (TODO comment)</td>
+        <td>Low</td>
+      </tr>
+      <tr>
+        <td>No latitude/longitude on delivery address — blocks rider navigation feature</td>
+        <td><code>RiderPortalApiController.cs</code> — OrderDetails action (TODO comment)</td>
+        <td>High (next sprint)</td>
+      </tr>
+      <tr>
+        <td>N+1 query per delivery card in PastDeliveries — fetches Order + Address in a loop</td>
+        <td><code>RiderPortalApiController.cs</code> — PastDeliveries action</td>
+        <td>Medium (at scale)</td>
+      </tr>
+      <tr>
+        <td>No DB index on (RiderId, StatusId, CreatedOnUtc) for history queries</td>
+        <td>SQL Server schema</td>
+        <td>Medium (at scale)</td>
+      </tr>
+      <tr>
+        <td><code>Failed</code> status (StatusId = 5) is defined but no workflow sets a delivery to Failed. Filtering by it always returns 0 results.</td>
+        <td><code>DeliveryOrderStatus.cs</code>, filter UI in past-deliveries template</td>
+        <td>Medium (next sprint)</td>
+      </tr>
+      <tr>
+        <td>Earnings shown as order total — no way for riders to see platform commission deducted</td>
+        <td><code>rider-past-deliveries.component.html</code> — earnings card row</td>
+        <td>Low (future sprint)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout success">
+    <p><strong>Definition of Done (met for this PR):</strong> The Past Delivery History page is
+    accessible from the rider dashboard, filters work correctly, all four timeline timestamps display
+    correctly for delivered orders, pagination is functional, and both auth guards prevent unauthorized
+    access. The DB migration runs idempotently on fresh and existing installations.</p>
+  </div>
+
+  <hr/>
+  <p style="text-align:center; color:#8a97b1; font-size:0.82rem;">
+    Past Delivery History — Feature Documentation &bull; NopCommerce Team-7 &bull; 29 May 2026 &bull;
+    Generated from <code>feature/past-delivery</code> @ <code>c379022</code>
+  </p>
+
+</div>
+
+<!-- Print button -->
+<button class="print-btn no-print" onclick="window.print()">🖨️ Save as PDF</button>
+
+</body>
+</html>

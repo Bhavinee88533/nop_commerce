@@ -1,0 +1,32 @@
+﻿@using Nop.Core.Domain.Catalog
+@using Nop.Services.Themes
+
+@inject CatalogSettings catalogSettings
+@inject IThemeContext themeContext
+
+@{
+    Layout ="";
+    var themeName = await themeContext.GetWorkingThemeNameAsync();
+    var supportRtl = await Html.ShouldUseRtlThemeAsync();
+    var enableScopedPluginTheme = false;
+
+    //add main CSS file
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/styles{(supportRtl ? ".rtl" : "")}.css");
+    
+    //add swiper css file
+    if (catalogSettings.DisplayAllPicturesOnCatalogPages)
+    {
+        NopHtml.AppendCssFileParts("~/lib_npm/swiper/swiper-bundle.min.css");
+    }
+
+    //add jQuery UI css file
+    NopHtml.AppendCssFileParts("~/lib_npm/jquery-ui-dist/jquery-ui.min.css");
+
+    //load storefront-only token-driven overrides after base theme files
+    NopHtml.AddCssFileParts($"~/Themes/{themeName}/Content/css/zepto-overrides.css");
+
+    //optional, opt-in plugin accent layer: enable only when plugin views are
+    //explicitly wrapped with the scope class expected by this stylesheet
+    if (enableScopedPluginTheme)
+        NopHtml.AddCssFileParts($"~/Themes/{themeName}/Content/css/plugin-overrides.scoped.css");
+}

@@ -1,0 +1,11 @@
+{
+  "Group": "Widgets",
+  "FriendlyName": "Banner Management",
+  "SystemName": "Widgets.BannerManagement",
+  "Version": "1.11",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Team 7",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widgets.BannerManagement.dll",
+  "Description": "Manage promotional banners for home, category, and product pages."
+}

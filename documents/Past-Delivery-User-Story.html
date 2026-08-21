@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Past Delivery History — User Story</title>
+  <style>
+    /* ── Print / PDF ───────────────────────────────────────────────── */
+    @media print {
+      .no-print { display: none !important; }
+      body { font-size: 10.5pt; background: #fff !important; }
+      .cover { min-height: auto; padding: 60px 40px; }
+      h2 { page-break-after: avoid; }
+      .card, table { page-break-inside: avoid; }
+      .page-break { page-break-before: always; }
+    }
+
+    /* ── Reset ──────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Tokens ─────────────────────────────────────────────────────── */
+    :root {
+      --bg:       #f4f6f9;
+      --ink:      #1a1a2e;
+      --mid:      #4a4a6a;
+      --accent:   #e94560;
+      --blue:     #0f3460;
+      --green:    #22c55e;
+      --amber:    #f59e0b;
+      --red:      #ef4444;
+      --surface:  #ffffff;
+      --border:   #dde3ed;
+      --radius:   10px;
+      --shadow:   0 2px 12px rgba(0,0,0,.08);
+    }
+
+    /* ── Body ───────────────────────────────────────────────────────── */
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.7;
+    }
+
+    /* ── Cover ──────────────────────────────────────────────────────── */
+    .cover {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 80px 40px;
+      gap: 20px;
+    }
+    .cover .icon { font-size: 56px; }
+    .cover .tag {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 16px;
+      border-radius: 20px;
+    }
+    .cover h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #e94560;
+    }
+    .cover .subtitle {
+      font-size: 1.15rem;
+      color: #a0a8c0;
+      max-width: 520px;
+    }
+    .cover .meta {
+      margin-top: 32px;
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .cover .meta-item { text-align: center; }
+    .cover .meta-item .label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .cover .meta-item .value { font-size: 1rem; color: #e2e8f0; font-weight: 600; }
+
+    /* ── Content wrapper ────────────────────────────────────────────── */
+    .content { max-width: 900px; margin: 0 auto; padding: 56px 32px; }
+
+    /* ── Section headings ───────────────────────────────────────────── */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    h2 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+    }
+    h3 { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin: 20px 0 8px; }
+    p { color: var(--mid); margin-bottom: 12px; }
+
+    /* ── Card ───────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+
+    /* ── User story box ─────────────────────────────────────────────── */
+    .story-box {
+      background: linear-gradient(135deg, #f0f4ff 0%, #fce4ec 100%);
+      border-left: 5px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 32px;
+    }
+    .story-box .story-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .story-box .story-text { font-size: 1.15rem; color: var(--ink); font-style: italic; line-height: 1.8; }
+    .story-box .ac-list { margin-top: 16px; padding-left: 20px; }
+    .story-box .ac-list li { color: var(--mid); margin-bottom: 6px; }
+
+    /* ── Who / What / Where grid ────────────────────────────────────── */
+    .www-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .www-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px 20px;
+      text-align: center;
+    }
+    .www-card .www-icon { font-size: 2.2rem; margin-bottom: 10px; }
+    .www-card .www-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+    .www-card .www-title { font-size: 1.05rem; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+    .www-card .www-desc { font-size: 0.88rem; color: var(--mid); }
+
+    /* ── Flow ───────────────────────────────────────────────────────── */
+    .flow {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin: 20px 0 32px;
+      flex-wrap: wrap;
+    }
+    .flow-step {
+      flex: 1;
+      min-width: 120px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 12px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--blue);
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .flow-step .step-num {
+      display: inline-block;
+      width: 22px; height: 22px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 800;
+      line-height: 22px;
+      margin-bottom: 8px;
+    }
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      padding: 0 6px;
+      font-size: 1.4rem;
+      color: var(--accent);
+    }
+
+    /* ── Table ──────────────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 0.9rem; }
+    thead { background: var(--blue); color: #fff; }
+    thead th { padding: 11px 14px; text-align: left; font-weight: 600; font-size: 0.82rem; letter-spacing: 0.5px; }
+    tbody tr:nth-child(even) { background: #f8f9fb; }
+    tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--mid); vertical-align: top; }
+    tbody td:first-child { font-weight: 600; color: var(--ink); }
+
+    /* ── Code block ─────────────────────────────────────────────────── */
+    .code-block {
+      background: #1a1a2e;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.83rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .code-block .kw  { color: #f59e0b; }
+    .code-block .fn  { color: #34d399; }
+    .code-block .cm  { color: #6b7280; font-style: italic; }
+    .code-block .str { color: #f87171; }
+
+    /* ── Badge ──────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-green  { background: #dcfce7; color: #15803d; }
+    .badge-red    { background: #fee2e2; color: #b91c1c; }
+    .badge-amber  { background: #fef3c7; color: #92400e; }
+    .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+
+    /* ── Timeline ───────────────────────────────────────────────────── */
+    .timeline-strip {
+      display: flex;
+      gap: 0;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 16px 0 24px;
+    }
+    .tl-step {
+      background: #f0f4ff;
+      border: 2px solid var(--blue);
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--blue);
+      white-space: nowrap;
+    }
+    .tl-arrow { color: var(--accent); font-size: 1.2rem; padding: 0 6px; }
+
+    /* ── Print button ───────────────────────────────────────────────── */
+    .print-btn {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 28px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(233,69,96,.4);
+      z-index: 999;
+    }
+    .print-btn:hover { background: #c73652; }
+
+    /* ── Divider ────────────────────────────────────────────────────── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ── Cover ───────────────────────────────────────────────────────────── -->
+<div class="cover">
+  <div class="icon">📦</div>
+  <div class="tag">User Story Document</div>
+  <h1>Past Delivery History</h1>
+  <p class="subtitle">A rider-facing feature that lets delivery agents review their completed and failed deliveries with filters and pagination.</p>
+  <div class="meta">
+    <div class="meta-item"><div class="label">Project</div><div class="value">NopCommerce Team 7</div></div>
+    <div class="meta-item"><div class="label">Feature</div><div class="value">Rider Portal</div></div>
+    <div class="meta-item"><div class="label">Date</div><div class="value">June 2026</div></div>
+    <div class="meta-item"><div class="label">Status</div><div class="value">✅ Implemented</div></div>
+  </div>
+</div>
+
+<!-- ── Main content ─────────────────────────────────────────────────────── -->
+<div class="content">
+
+  <!-- ── 1. User Story ──────────────────────────────────────────────── -->
+  <div class="section-label">Section 01</div>
+  <h2>User Story</h2>
+
+  <div class="story-box">
+    <div class="story-title">Primary Story</div>
+    <div class="story-text">
+      "As a <strong>rider</strong>, I want to view a paginated list of my past deliveries (both completed and failed), filtered by date range and delivery status, so that I can track my delivery history and earnings."
+    </div>
+    <ul class="ac-list">
+      <li><strong>AC-1:</strong> Only deliveries in <em>Delivered</em> (status 4) or <em>Failed</em> (status 5) state are shown.</li>
+      <li><strong>AC-2:</strong> Results are scoped strictly to the authenticated rider — no cross-rider data leakage.</li>
+      <li><strong>AC-3:</strong> Rider can filter by date range (from / to) and optionally by status (Delivered, Failed, or All).</li>
+      <li><strong>AC-4:</strong> Results are paginated (10 per page) with Prev / Next controls and a total count summary.</li>
+      <li><strong>AC-5:</strong> Each card shows: Order #, Customer name, Delivery address, Earnings (INR), timestamps, and a delivery timeline (Assigned → Picked Up → In Transit → Delivered).</li>
+      <li><strong>AC-6:</strong> If no deliveries match the filter, an empty-state message is shown instead of an empty table.</li>
+      <li><strong>AC-7:</strong> Unauthenticated requests to the API endpoint return <code>401 Unauthorized</code>.</li>
+    </ul>
+  </div>
+
+  <!-- ── 2. Who / What / Where ──────────────────────────────────────── -->
+  <div class="section-label">Section 02</div>
+  <h2>Who · What · Where</h2>
+
+  <div class="www-grid">
+    <div class="www-card">
+      <div class="www-icon">🧑‍💼</div>
+      <div class="www-label">Who</div>
+      <div class="www-title">The Rider</div>
+      <div class="www-desc">A registered and approved delivery rider who has an active rider profile. Must be authenticated via the NopCommerce customer session.</div>
+    </div>
+    <div class="www-card">
+      <div class="www-icon">📋</div>
+      <div class="www-label">What</div>
+      <div class="www-title">Delivery History Page</div>
+      <div class="www-desc">A filterable, paginated view of all past deliveries. Shows order details, customer info, earnings, delivery address, status, and full delivery timeline per card.</div>
+    </div>
+    <div class="www-card">
+      <div class="www-icon">📍</div>
+      <div class="www-label">Where</div>
+      <div class="www-title">Rider Portal</div>
+      <div class="www-desc">Accessible at <strong>/rider/past-deliveries</strong> in the Rider SPA (Angular). Reached via the "Delivery History" link on the Rider Dashboard.</div>
+    </div>
+  </div>
+
+  <!-- ── 3. End-to-End Flow ─────────────────────────────────────────── -->
+  <div class="section-label">Section 03</div>
+  <h2>End-to-End Request Flow</h2>
+
+  <div class="flow">
+    <div class="flow-step"><div class="step-num">1</div>Rider opens<br/>/rider/past-deliveries</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="step-num">2</div>Angular component<br/>ngOnInit → load(0)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="step-num">3</div>RiderApiService<br/>GET /api/rider/past-deliveries</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="step-num">4</div>RiderPortalApiController<br/>validates session + rider</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="step-num">5</div>DeliveryOrderService<br/>GetPastDeliveriesAsync()</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step"><div class="step-num">6</div>JSON response<br/>rendered as cards</div>
+  </div>
+
+  <p>On filter or page change, steps 2–6 repeat with updated query parameters — the component never navigates away.</p>
+
+  <!-- ── 4. UI Breakdown ────────────────────────────────────────────── -->
+  <hr class="divider" />
+  <div class="section-label">Section 04</div>
+  <h2>UI Breakdown — What the Rider Sees</h2>
+
+  <div class="card">
+    <h3>Filter Bar</h3>
+    <p>Three controls displayed horizontally at the top of the page:</p>
+    <table>
+      <thead><tr><th>Control</th><th>Type</th><th>Bound to</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td>From</td><td>Date picker</td><td><code>dateFrom</code></td><td>Filters deliveries on or after this date (UTC midnight).</td></tr>
+        <tr><td>To</td><td>Date picker</td><td><code>dateTo</code></td><td>Filters deliveries on or before end-of-day (UTC 23:59:59).</td></tr>
+        <tr><td>Status</td><td>Select</td><td><code>statusId</code></td><td><span class="badge badge-blue">All</span> · <span class="badge badge-green">Delivered (4)</span> · <span class="badge badge-red">Failed (5)</span></td></tr>
+      </tbody>
+    </table>
+    <p>Two action buttons: <strong>Apply</strong> reloads page 0 with current filters. <strong>Clear</strong> resets all fields and reloads.</p>
+  </div>
+
+  <div class="card">
+    <h3>Delivery Card Fields</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Source</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Order #</td><td><code>customOrderNumber</code> or <code>orderId</code></td><td>Custom number takes priority.</td></tr>
+        <tr><td>Status Badge</td><td><code>deliveryStatusId</code></td><td>Green = Delivered, Red = Failed.</td></tr>
+        <tr><td>Customer</td><td>Shipping/Billing address name</td><td>Falls back to email if name is blank.</td></tr>
+        <tr><td>Address</td><td><code>address1</code> + <code>city</code></td><td>Hidden if not available.</td></tr>
+        <tr><td>Earnings</td><td><code>orderTotal × 83</code> (USD → INR)</td><td>Displayed as "Rs X".</td></tr>
+        <tr><td>Delivered / Created</td><td><code>deliveredOnUtc</code> or <code>createdOnUtc</code></td><td>Formatted dd MMM yyyy, hh:mm a.</td></tr>
+        <tr><td>Timeline Strip</td><td>UTC timestamp fields</td><td>4 milestones (see below).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Delivery Timeline Strip (per card)</h3>
+    <div class="timeline-strip">
+      <div class="tl-step">Assigned</div>
+      <div class="tl-arrow">›</div>
+      <div class="tl-step">Picked Up</div>
+      <div class="tl-arrow">›</div>
+      <div class="tl-step">In Transit</div>
+      <div class="tl-arrow">›</div>
+      <div class="tl-step">Delivered</div>
+    </div>
+    <p>Each milestone is highlighted (<code>.done</code> CSS class) when the corresponding UTC timestamp is non-null, giving the rider a visual record of when each stage was completed.</p>
+  </div>
+
+  <div class="card">
+    <h3>Pagination Controls</h3>
+    <p>Shown only when <code>totalPages &gt; 1</code>. Displays "Page X of Y" with <strong>← Prev</strong> and <strong>Next →</strong> buttons that are disabled at their respective boundaries. Page size is fixed at <strong>10</strong>.</p>
+  </div>
+
+  <!-- ── 5. API Contract ─────────────────────────────────────────────── -->
+  <hr class="divider page-break" />
+  <div class="section-label">Section 05</div>
+  <h2>API Contract</h2>
+
+  <div class="card">
+    <h3>Endpoint</h3>
+    <div class="code-block"><span class="kw">GET</span> /api/rider/past-deliveries</div>
+    <table>
+      <thead><tr><th>Query Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>pageIndex</td><td>int</td><td>Yes (default 0)</td><td>Zero-based page number. Clamped to ≥ 0.</td></tr>
+        <tr><td>pageSize</td><td>int</td><td>Yes (default 10)</td><td>Items per page. Clamped to 1–50.</td></tr>
+        <tr><td>dateFrom</td><td>string (date)</td><td>No</td><td>ISO 8601 date. Parsed to UTC midnight.</td></tr>
+        <tr><td>dateTo</td><td>string (date)</td><td>No</td><td>ISO 8601 date. Parsed to UTC end-of-day.</td></tr>
+        <tr><td>statusId</td><td>int</td><td>No</td><td>4 = Delivered, 5 = Failed. Omit for all past statuses.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Success Response (200 OK)</h3>
+    <div class="code-block">
+{<br/>
+&nbsp;&nbsp;<span class="str">"items"</span>: [<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"orderId"</span>: 101,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"deliveryOrderId"</span>: 42,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"customOrderNumber"</span>: <span class="str">"ORD-0101"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"orderTotal"</span>: 2490,&nbsp;&nbsp;<span class="cm">// USD * 83 → INR</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"currencyCode"</span>: <span class="str">"INR"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"deliveryStatus"</span>: <span class="str">"Delivered"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"deliveryStatusId"</span>: 4,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"customerName"</span>: <span class="str">"Aisha Khan"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"deliveryAddress"</span>: <span class="str">"12 Main St, Lahore"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"assignedAtUtc"</span>: <span class="str">"2026-06-01T08:00:00Z"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"pickedUpOnUtc"</span>: <span class="str">"2026-06-01T08:15:00Z"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"inTransitOnUtc"</span>: <span class="str">"2026-06-01T08:20:00Z"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"deliveredOnUtc"</span>: <span class="str">"2026-06-01T09:05:00Z"</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"createdOnUtc"</span>: <span class="str">"2026-06-01T07:55:00Z"</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;],<br/>
+&nbsp;&nbsp;<span class="str">"totalCount"</span>: 37,<br/>
+&nbsp;&nbsp;<span class="str">"pageIndex"</span>: 0,<br/>
+&nbsp;&nbsp;<span class="str">"pageSize"</span>: 10,<br/>
+&nbsp;&nbsp;<span class="str">"totalPages"</span>: 4<br/>
+}
+    </div>
+
+    <h3>Error Responses</h3>
+    <table>
+      <thead><tr><th>Code</th><th>Condition</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-red">401</span></td><td>No authenticated customer session.</td></tr>
+        <tr><td><span class="badge badge-amber">404</span></td><td>Authenticated customer has no rider profile.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 6. Component Architecture ──────────────────────────────────── -->
+  <hr class="divider" />
+  <div class="section-label">Section 06</div>
+  <h2>Component Architecture</h2>
+
+  <div class="card">
+    <h3>Frontend — Angular Files</h3>
+    <table>
+      <thead><tr><th>File</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>rider-past-deliveries.component.ts</td>
+          <td>Standalone component. Manages filter state (<code>dateFrom</code>, <code>dateTo</code>, <code>statusId</code>), pagination, and reactive UI state via Angular <code>signal()</code>.</td>
+        </tr>
+        <tr>
+          <td>rider-past-deliveries.component.html</td>
+          <td>Template with filter bar, loading/error/empty states, delivery card list, and pagination nav.</td>
+        </tr>
+        <tr>
+          <td>rider-past-deliveries.component.css</td>
+          <td>Scoped styles. Glassmorphism cards, status badge colours, timeline strip.</td>
+        </tr>
+        <tr>
+          <td>rider-api.service.ts</td>
+          <td>Injectable service. <code>getPastDeliveries(filter)</code> builds <code>HttpParams</code> and calls <code>GET /api/rider/past-deliveries</code> with credentials.</td>
+        </tr>
+        <tr>
+          <td>rider.models.ts</td>
+          <td>TypeScript interfaces: <code>PastDelivery</code>, <code>PastDeliveriesResponse</code>, <code>PastDeliveriesFilter</code>, <code>DeliveryStatusId</code> enum.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Backend — C# Files</h3>
+    <table>
+      <thead><tr><th>File</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>RiderPortalApiController.cs</td>
+          <td>REST controller. Validates auth + rider ownership, clamps pagination params, parses date filters to UTC, delegates to service, and shapes the JSON response.</td>
+        </tr>
+        <tr>
+          <td>DeliveryOrderService.cs</td>
+          <td><code>GetPastDeliveriesAsync()</code>: Queries the <code>DeliveryOrder</code> repository filtered by <code>riderId</code>, past statuses (4 or 5), optional date range, and optional statusId. Returns paginated <code>(IList&lt;DeliveryOrder&gt;, totalCount)</code> tuple.</td>
+        </tr>
+        <tr>
+          <td>IDeliveryOrderService.cs</td>
+          <td>Interface contract defining <code>GetPastDeliveriesAsync()</code> signature.</td>
+        </tr>
+        <tr>
+          <td>DeliveryOrder.cs (entity)</td>
+          <td>EF Core entity with timestamp fields: <code>AssignedAtUtc</code>, <code>PickedUpOnUtc</code>, <code>InTransitOnUtc</code>, <code>DeliveredOnUtc</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 7. State Machine ────────────────────────────────────────────── -->
+  <hr class="divider page-break" />
+  <div class="section-label">Section 07</div>
+  <h2>Delivery Status State Machine</h2>
+
+  <p>A delivery order follows a strict forward-only progression. Only <strong>Delivered</strong> and <strong>Failed</strong> are terminal states surfaced by the Past Deliveries feature.</p>
+
+  <div class="flow" style="margin-top:16px;">
+    <div class="flow-step" style="background:#eff6ff;border-color:#93c5fd;"><div class="step-num" style="background:#3b82f6;">0</div>Pending</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="background:#f0fdf4;border-color:#86efac;"><div class="step-num" style="background:#22c55e;">1</div>Assigned</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="background:#fefce8;border-color:#fde047;"><div class="step-num" style="background:#eab308;">2</div>Picked Up</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="background:#fdf4ff;border-color:#d8b4fe;"><div class="step-num" style="background:#a855f7;">3</div>In Transit</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="background:#f0fdf4;border-color:#4ade80;"><div class="step-num" style="background:#16a34a;">4</div>Delivered ✓</div>
+  </div>
+  <p style="margin-top:4px;">Failed (status 5) can be set at any active stage by an admin. Riders only see statuses 4 and 5 in this feature.</p>
+
+  <table>
+    <thead><tr><th>Status ID</th><th>Label</th><th>Shown in Past Deliveries?</th><th>Badge Colour</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>Pending</td><td>No</td><td>—</td></tr>
+      <tr><td>1</td><td>Assigned</td><td>No</td><td>—</td></tr>
+      <tr><td>2</td><td>Picked Up</td><td>No</td><td>—</td></tr>
+      <tr><td>3</td><td>In Transit</td><td>No</td><td>—</td></tr>
+      <tr><td>4</td><td>Delivered</td><td><span class="badge badge-green">Yes</span></td><td>Green</td></tr>
+      <tr><td>5</td><td>Failed</td><td><span class="badge badge-red">Yes</span></td><td>Red</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ── 8. Security Notes ────────────────────────────────────────────── -->
+  <hr class="divider" />
+  <div class="section-label">Section 08</div>
+  <h2>Security &amp; Data Isolation</h2>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Concern</th><th>How It Is Handled</th></tr></thead>
+      <tbody>
+        <tr><td>Authentication</td><td>Controller calls <code>GetAuthenticatedCustomerAsync()</code> — returns 401 if no valid session.</td></tr>
+        <tr><td>Rider ownership</td><td>Rider record is fetched by <code>customerId</code> of the logged-in user. Query always includes <code>WHERE riderId = &lt;authenticated riderId&gt;</code>.</td></tr>
+        <tr><td>Cross-rider access</td><td>Impossible — the riderId used in the DB query is derived from the server-side session, never from a user-supplied parameter.</td></tr>
+        <tr><td>Pagination abuse</td><td><code>pageSize</code> is clamped server-side to 1–50; <code>pageIndex</code> is clamped to ≥ 0.</td></tr>
+        <tr><td>Date injection</td><td>Dates are parsed via <code>DateTime.TryParse</code> and re-specified as UTC — raw strings are never passed to the query engine.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 9. Glossary ─────────────────────────────────────────────────── -->
+  <hr class="divider" />
+  <div class="section-label">Section 09</div>
+  <h2>Glossary</h2>
+
+  <table>
+    <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+    <tbody>
+      <tr><td>Rider</td><td>A delivery agent registered in the NopCommerce Rider Management plugin.</td></tr>
+      <tr><td>DeliveryOrder</td><td>A plugin entity that wraps a NopCommerce <code>Order</code> and tracks delivery-specific state and timestamps.</td></tr>
+      <tr><td>Past Delivery</td><td>Any DeliveryOrder with status Delivered (4) or Failed (5).</td></tr>
+      <tr><td>pageIndex</td><td>Zero-based page number used for server-side pagination.</td></tr>
+      <tr><td>INR Conversion</td><td>Order totals stored in USD are multiplied by 83 for display in Indian Rupees.</td></tr>
+      <tr><td>Angular Signals</td><td>Angular 17+ reactive primitive used for component state (<code>signal()</code>), replacing RxJS BehaviorSubjects for simple local state.</td></tr>
+    </tbody>
+  </table>
+
+</div><!-- /.content -->
+
+<!-- ── Print button ──────────────────────────────────────────────────────── -->
+<button class="print-btn no-print" onclick="window.print()">🖨 Save as PDF</button>
+
+</body>
+</html>

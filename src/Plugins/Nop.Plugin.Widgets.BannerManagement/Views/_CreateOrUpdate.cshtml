@@ -1,0 +1,141 @@
+@model BannerModel
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card card-default">
+                    <div class="card-header">@T("Plugins.Widgets.BannerManagement.Title")</div>
+                    <div class="card-body">
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="PictureId" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="PictureId" />
+                                <span asp-validation-for="PictureId"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="Title" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="Title" />
+                                <span asp-validation-for="Title"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="Description" />
+                            </div>
+                            <div class="col-md-9">
+                                <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                                <span asp-validation-for="Description"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="ButtonText" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ButtonText" />
+                                <span asp-validation-for="ButtonText"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="RedirectUrl" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="RedirectUrl" />
+                                <small class="form-text text-muted">Enter a full URL (e.g. https://example.com) or a relative path (e.g. /electronics). Leave empty for no redirect.</small>
+                                <span asp-validation-for="RedirectUrl"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="DisplayOrder" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="DisplayOrder" />
+                                <span asp-validation-for="DisplayOrder"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="IsActive" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="IsActive" />
+                                <span asp-validation-for="IsActive"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="ShowOnHomePage" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ShowOnHomePage" />
+                                <small class="form-text text-muted">Check to display this banner on the home page.</small>
+                                <span asp-validation-for="ShowOnHomePage"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="CategoryId" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-select asp-for="CategoryId" asp-items="Model.AvailableCategories" />
+                                <small class="form-text text-muted">Select a category to show this banner only on that category's page. Leave as "None" to not target a specific category.</small>
+                                <span asp-validation-for="CategoryId"></span>
+                            </div>
+                        </div>
+                        @if (Model.Id > 0)
+                        {
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="CreatedOnUtc" />
+                                </div>
+                                <div class="col-md-9 pt-2">
+                                    <span>@Model.CreatedOnUtc.ToString("u")</span>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="UpdatedOnUtc" />
+                                </div>
+                                <div class="col-md-9 pt-2">
+                                    <span>@Model.UpdatedOnUtc.ToString("u")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-default">
+                    <div class="card-header">@T("Plugins.Widgets.BannerManagement.Preview")</div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(Model.PreviewPictureUrl))
+                        {
+                            <div class="bm-admin-preview">
+                                <img src="@Model.PreviewPictureUrl" alt="@Model.Title" class="img-fluid mb-3" />
+                                <h5>@Model.Title</h5>
+                                <p>@Model.Description</p>
+                                @if (!string.IsNullOrEmpty(Model.ButtonText))
+                                {
+                                    <a href="@(string.IsNullOrEmpty(Model.PreviewRedirectUrl) ? "#" : Model.PreviewRedirectUrl)" target="_blank" class="btn btn-primary">@Model.ButtonText</a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">Upload an image to preview the banner.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

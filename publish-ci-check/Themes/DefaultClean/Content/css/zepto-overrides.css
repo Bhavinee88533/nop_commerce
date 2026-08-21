@@ -1,0 +1,215 @@
+/*
+ * Storefront theme refinements.
+ * Purpose: keep semantic tokens, reduce heavy styling, and apply accent color only
+ * to interactive states without overriding plugin-specific/OAuth UI.
+ */
+
+:root {
+  --surface-card: var(--surface-bg);
+  --border-interactive: var(--border-color);
+  --shadow-soft-card: 0 6px 16px rgba(35, 31, 50, 0.06);
+  --shadow-soft-hover: 0 10px 22px rgba(35, 31, 50, 0.10);
+}
+
+.header-upper,
+.header-selectors-wrapper,
+.header-links-wrapper,
+.header-lower {
+  background-color: var(--surface-bg);
+  border-bottom-color: var(--border-soft);
+}
+
+.header-links a,
+.header-links span,
+.block .list a,
+.block .sublist a,
+.breadcrumb a,
+.breadcrumb li * {
+  color: var(--text-secondary);
+}
+
+.header-links a:hover,
+.header-links a:focus,
+.block .list a:hover,
+.block .list a:focus,
+.block .sublist a:hover,
+.block .sublist a:focus,
+.breadcrumb a:hover,
+.breadcrumb a:focus {
+  color: var(--primary-color);
+}
+
+#topcartlink {
+  border: 1px solid var(--border-soft);
+  background-color: var(--surface-bg);
+  border-radius: 4px;
+}
+
+.search-box .search-box-button {
+  background: var(--primary-color);
+}
+
+.search-box .search-box-button:hover,
+.search-box .search-box-button:focus {
+  background: var(--primary-hover);
+}
+
+.menu__item,
+.menu > .menu__item,
+.menu__grid-view,
+.menu__list-view,
+.footer-menu__list,
+.block .title,
+.block .listbox,
+.breadcrumb,
+.ui-tabs-panel {
+  border: 1px solid var(--border-soft);
+  background-color: var(--surface-bg);
+}
+
+.menu__item-toggle,
+.menu__link,
+.ui-tabs-nav li a {
+  color: var(--text-primary);
+}
+
+.menu__item-toggle:hover,
+.menu__item-toggle:focus,
+.menu__link:hover,
+.menu__link:focus {
+  color: var(--primary-color);
+}
+
+.menu__item .menu__item .menu__link::before,
+.menu__group .menu__link::before {
+  background-color: var(--border-focus-color);
+}
+
+.product-grid .title {
+  border-bottom-color: var(--border-soft);
+  color: var(--text-primary);
+}
+
+.item-box {
+  margin: 0 0 32px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-soft-card);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.item-box:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft-hover);
+}
+
+.item-box .picture {
+  margin: 0;
+  border-bottom: 1px solid var(--border-soft);
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.item-box .details {
+  padding: 14px 12px;
+}
+
+.item-box .product-title,
+.item-box .product-title a {
+  color: var(--text-primary);
+}
+
+.item-box .product-title a:hover,
+.item-box .product-title a:focus {
+  color: var(--primary-color);
+}
+
+.item-box .actual-price {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.item-box .product-box-add-to-cart-button {
+  background: var(--primary-color);
+}
+
+.item-box .product-box-add-to-cart-button:hover,
+.item-box .product-box-add-to-cart-button:focus {
+  background: var(--primary-hover);
+}
+
+.item-box .add-to-compare-list-button,
+.item-box .add-to-wishlist-button {
+  border-left-color: var(--surface-bg) !important;
+  background-color: var(--surface-bg);
+}
+
+.pager li a,
+.pager li span {
+  border-color: var(--border-interactive);
+  background-color: var(--surface-bg);
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.pager li span {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.pager li a:hover,
+.pager li a:focus {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.ui-tabs-nav {
+  border-bottom-color: var(--border-soft);
+}
+
+.ui-tabs-nav li a {
+  border-color: var(--border-soft);
+  border-radius: 4px 4px 0 0;
+  background-color: var(--surface-bg);
+}
+
+.ui-tabs-nav li.ui-state-active a {
+  border-color: var(--primary-color);
+  border-bottom-color: transparent;
+  color: var(--primary-color);
+  background: var(--surface-bg);
+}
+
+@media (min-width: 1001px) {
+  .footer-menu__list {
+    padding: 12px 16px;
+    border-radius: 6px;
+  }
+
+  .footer-menu__item,
+  .footer-menu__item:last-child {
+    padding-inline: 0;
+    padding-block: 6px;
+  }
+
+  .footer-menu__link {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    width: 92%;
+  }
+
+  .item-box {
+    margin: 0 0 24px;
+  }
+
+  .ui-tabs-nav li a {
+    font-size: 15px;
+    padding: 10px 14px !important;
+  }
+}

@@ -1,0 +1,273 @@
+@{
+    Layout = null;
+    var orderId = ViewBag.OrderId as int? ?? 0;
+    var status = ViewBag.Status as string ?? "Pending";
+    var riderName = ViewBag.RiderName as string ?? "";
+    var hubPath = ViewBag.HubPath as string ?? "/hubs/rider-notifications";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Track Order #@orderId</title>
+    <style>
+        /* ── Leaflet core CSS (inlined to bypass NopCommerce CSS bundler) ─────── */
+        .leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+        .leaflet-container{position:relative;overflow:hidden;outline:0;cursor:grab}
+        .leaflet-container:active{cursor:grabbing}
+        .leaflet-tile{filter:inherit;visibility:hidden}
+        .leaflet-tile-loaded{visibility:inherit}
+        .leaflet-zoom-anim .leaflet-zoom-animated{will-change:transform;-webkit-transition:-webkit-transform .25s cubic-bezier(0,0,.25,1);transition:transform .25s cubic-bezier(0,0,.25,1)}
+        .leaflet-pan-anim .leaflet-tile{-webkit-transition:none;transition:none}
+        .leaflet-container img.leaflet-image-layer,.leaflet-container img.leaflet-tile{max-width:none!important;max-height:none!important;width:auto;padding:0}
+        .leaflet-container img{padding:0;cursor:auto}
+        .leaflet-tile-pane{z-index:2}.leaflet-overlay-pane{z-index:4}.leaflet-shadow-pane{z-index:5}.leaflet-marker-pane{z-index:6}.leaflet-tooltip-pane{z-index:7}.leaflet-popup-pane{z-index:8}
+        .leaflet-map-pane canvas{z-index:1}.leaflet-map-pane svg{z-index:2}
+        .leaflet-control{position:relative;z-index:800;pointer-events:auto}
+        .leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}
+        .leaflet-top{top:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}.leaflet-right{right:0}
+        .leaflet-control{float:left;clear:both}.leaflet-right .leaflet-control{float:right}
+        .leaflet-top .leaflet-control{margin-top:10px}.leaflet-bottom .leaflet-control{margin-bottom:10px}
+        .leaflet-left .leaflet-control{margin-left:10px}.leaflet-right .leaflet-control{margin-right:10px}
+        .leaflet-interactive{cursor:pointer}
+        .leaflet-popup-content-wrapper{background:#fff;color:#333;padding:1px;border-radius:12px;box-shadow:0 3px 14px rgba(0,0,0,.4)}
+        .leaflet-popup-content{margin:13px 24px;line-height:1.5;font-size:14px}
+        .leaflet-popup-tip-container{width:40px;height:20px;position:absolute;left:50%;margin-left:-20px;overflow:hidden;pointer-events:none}
+        .leaflet-popup-tip{background:#fff;width:17px;height:17px;padding:1px;margin:-10px auto 0;transform:rotate(45deg);box-shadow:2px 2px 3px rgba(0,0,0,.2)}
+        .leaflet-popup-close-button{position:absolute;top:0;right:0;border:none;background:transparent;cursor:pointer;font:16px/24px Tahoma,Verdana,sans-serif;color:#757575;padding:4px}
+        .leaflet-control-zoom{box-shadow:0 1px 5px rgba(0,0,0,.4)}
+        .leaflet-control-zoom a{display:block;text-align:center;text-decoration:none;width:26px;height:26px;font:bold 18px/26px Lucida Console,Monaco,monospace;cursor:pointer;color:#444;background:#fff}
+        .leaflet-tooltip{position:absolute;padding:6px;background:#fff;border:1px solid #fff;border-radius:3px;color:#222;white-space:nowrap;user-select:none;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+        /* ─────────────────────────────────────────────────────────────────────── */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d0d1a; color: #eee; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #6c63ff, #e040fb); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+        .header h1 { font-size: 1.2rem; font-weight: 700; color: #fff; }
+        .header a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem; }
+        .container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+        #map { width: 100%; height: 350px; border-radius: 16px; margin-bottom: 24px; background: #1a1a2e; }
+        .no-location { width: 100%; height: 350px; border-radius: 16px; background: linear-gradient(135deg, #1a1a2e, #16213e); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 24px; gap: 12px; }
+        .no-location p { color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+        .no-location span { font-size: 3rem; }
+        .timeline { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .timeline h2 { font-size: 1rem; color: rgba(255,255,255,0.7); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        .step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+        .step-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); }
+        .step-icon.done { background: linear-gradient(135deg, #6c63ff, #e040fb); border-color: transparent; }
+        .step-icon.active { background: rgba(108,99,255,0.3); border-color: #6c63ff; animation: pulse 2s infinite; }
+        .step-text h3 { font-size: 0.95rem; font-weight: 600; }
+        .step-text p { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        @@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(108,99,255,0.4); } 50% { box-shadow: 0 0 0 8px rgba(108,99,255,0); } }
+        .rider-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.08); }
+        .rider-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg,#6c63ff,#e040fb); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+        .rider-info h3 { font-size: 0.95rem; font-weight: 600; }
+        .rider-info p { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+        .live-badge { margin-left: auto; background: #00c853; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; letter-spacing: 0.5px; }
+        .status-banner { text-align: center; padding: 12px; background: rgba(108,99,255,0.2); border-radius: 12px; margin-bottom: 16px; font-size: 0.95rem; font-weight: 600; border: 1px solid rgba(108,99,255,0.4); }
+        .finding-rider-banner { text-align: center; padding: 14px; background: rgba(255,180,0,0.15); border-radius: 12px; margin-bottom: 16px; font-size: 0.9rem; font-weight: 600; border: 1px solid rgba(255,180,0,0.4); color: #ffd740; animation: findingPulse 1.5s ease-in-out infinite; display: none; }
+        @@keyframes findingPulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+    </style>
+</head>
+<body>
+<div class="header">
+    <a href="/">← Store</a>
+    <h1>🛵 Track Order #@orderId</h1>
+</div>
+
+<div class="container">
+    <!-- Pending: finding rider banner (shown if status is Pending and no rider yet) -->
+    <div class="finding-rider-banner" id="findingRiderBanner" @(status == "Pending" && string.IsNullOrEmpty(riderName) ? "style=\"display:block\"" : "")>
+        🔍 Finding your rider... Please wait
+    </div>
+
+    <div class="status-banner" id="statusBanner">Status: @status</div>
+
+    @if (!string.IsNullOrEmpty(riderName))
+    {
+        <div class="rider-card">
+            <div class="rider-avatar">🧑‍🦱</div>
+            <div class="rider-info">
+                <h3>@riderName</h3>
+                <p>Your delivery rider</p>
+            </div>
+            <span class="live-badge" id="liveBadge">LIVE</span>
+        </div>
+    }
+
+    <div id="mapContainer">
+        <div class="no-location" id="noLocation">
+            <span>📍</span>
+            <p>Waiting for rider location...</p>
+            <p id="locationStatus" style="font-size:0.75rem;">Checking every 10 seconds</p>
+        </div>
+        <div id="map" style="display:none;"></div>
+    </div>
+
+    <div class="timeline">
+        <h2>Delivery Progress</h2>
+        <div class="step" id="step-pending">
+            <div class="step-icon" id="icon-pending">📋</div>
+            <div class="step-text"><h3>Order Placed</h3><p>Your order is confirmed</p></div>
+        </div>
+        <div class="step" id="step-assigned">
+            <div class="step-icon" id="icon-assigned">🧑‍🦱</div>
+            <div class="step-text"><h3>Rider Assigned</h3><p>A rider has been assigned</p></div>
+        </div>
+        <div class="step" id="step-picked">
+            <div class="step-icon" id="icon-picked">📦</div>
+            <div class="step-text"><h3>Picked Up</h3><p>Rider has picked up your order</p></div>
+        </div>
+        <div class="step" id="step-transit">
+            <div class="step-icon" id="icon-transit">🚴</div>
+            <div class="step-text"><h3>On the Way</h3><p>Rider is heading to you</p></div>
+        </div>
+        <div class="step" id="step-delivered">
+            <div class="step-icon" id="icon-delivered">✅</div>
+            <div class="step-text"><h3>Delivered</h3><p>Order delivered successfully!</p></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" asp-location="None"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js" asp-location="None"></script>
+<script asp-location="None">
+    var orderId = @orderId;
+    var map = null;
+    var riderMarker = null;
+    var mapInitialized = false;
+
+    var statusOrder = ['Pending', 'Assigned', 'PickedUp', 'InTransit', 'Delivered'];
+    var statusToStep = {
+        'Pending': 'pending',
+        'Assigned': 'assigned',
+        'PickedUp': 'picked',
+        'InTransit': 'transit',
+        'Delivered': 'delivered'
+    };
+
+    function updateTimeline(status) {
+        document.getElementById('statusBanner').textContent = 'Status: ' + status;
+        var currentIdx = statusOrder.indexOf(status);
+        statusOrder.forEach(function(s, i) {
+            var stepKey = statusToStep[s];
+            var icon = document.getElementById('icon-' + stepKey);
+            if (!icon) return;
+            icon.classList.remove('done', 'active');
+            if (i < currentIdx) icon.classList.add('done');
+            else if (i === currentIdx) icon.classList.add('active');
+        });
+
+        if (status === 'Delivered') {
+            document.getElementById('statusBanner').style.background = 'rgba(0,200,83,0.25)';
+            document.getElementById('statusBanner').style.borderColor = '#00c853';
+        }
+    }
+
+    function initMap(lat, lng) {
+        if (!mapInitialized) {
+            document.getElementById('noLocation').style.display = 'none';
+            var mapDiv = document.getElementById('map');
+            mapDiv.style.display = 'block';
+            // invalidateSize fix: wait one frame so browser computes dimensions
+            setTimeout(function() {
+                map = L.map('map').setView([lat, lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+
+                var riderIcon = L.divIcon({
+                    html: '<div style="font-size:2rem;line-height:1;">🛵</div>',
+                    iconSize: [40, 40], iconAnchor: [20, 20], className: ''
+                });
+                riderMarker = L.marker([lat, lng], { icon: riderIcon })
+                    .addTo(map)
+                    .bindPopup('<b>Your Rider</b><br>On the way!');
+                map.invalidateSize();
+                mapInitialized = true;
+            }, 100);
+        } else {
+            riderMarker.setLatLng([lat, lng]);
+            map.panTo([lat, lng]);
+            map.invalidateSize();
+        }
+    }
+
+    function pollLocation() {
+        fetch('/api/rider/order-location/' + orderId, { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.found && data.lat && data.lng) {
+                    initMap(data.lat, data.lng);
+                    var el = document.getElementById('locationStatus');
+                    if (el) el.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                } else {
+                    // map stays hidden until rider shares location
+                }
+            })
+            .catch(function() {});
+    }
+
+    // ── SignalR real-time status updates ──────────────────────────────────────
+    var connection = new signalR.HubConnectionBuilder()
+        .withUrl('@hubPath')
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on('DeliveryStatusUpdated', function(payload) {
+        if (payload.orderId !== orderId) return;
+        updateTimeline(payload.status);
+        // also refresh rider name if present
+        if (payload.riderName) {
+            var ri = document.querySelector('.rider-info h3');
+            if (ri) ri.textContent = payload.riderName;
+            // ensure rider card visible
+            var rc = document.querySelector('.rider-card');
+            if (rc) rc.style.display = 'flex';
+        }
+        // refresh map immediately on status change
+        pollLocation();
+    });
+
+    // Fired when a rider accepts the order (new smart assignment flow)
+    connection.on('RiderAssigned', function(payload) {
+        if (payload.orderId !== orderId) return;
+        // Hide the "finding rider" banner
+        var findingBanner = document.getElementById('findingRiderBanner');
+        if (findingBanner) findingBanner.style.display = 'none';
+        // Update timeline to Assigned
+        updateTimeline('Assigned');
+        // Inject / update rider card
+        var existingCard = document.querySelector('.rider-card');
+        if (existingCard) {
+            var h3 = existingCard.querySelector('.rider-info h3');
+            if (h3) h3.textContent = payload.riderName;
+            existingCard.style.display = 'flex';
+        } else {
+            var container = document.querySelector('.container');
+            var statusBanner = document.getElementById('statusBanner');
+            var cardHtml = '<div class="rider-card" style="margin-bottom:16px;">' +
+                '<div class="rider-avatar">🧑‍🦱</div>' +
+                '<div class="rider-info"><h3>' + payload.riderName + '</h3><p>Your delivery rider</p></div>' +
+                '<span class="live-badge">LIVE</span></div>';
+            statusBanner.insertAdjacentHTML('afterend', cardHtml);
+        }
+        pollLocation();
+    });
+
+    connection.start()
+        .then(function() {
+            return connection.invoke('TrackOrder', orderId);
+        })
+        .catch(function(err) {
+            console.warn('SignalR connect failed, polling only:', err);
+        });
+    // ─────────────────────────────────────────────────────────────────────────
+
+    updateTimeline('@status');
+    pollLocation();
+    setInterval(pollLocation, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<section class="history-page">
+
+  <!-- Header -->
+  <header class="history-header glass">
+    <div class="header-title">
+      <p class="eyebrow">Rider Portal</p>
+      <h1>Delivery History</h1>
+    </div>
+    <button class="nav-chip" (click)="goToDashboard()">← Dashboard</button>
+  </header>
+
+  <!-- Filters -->
+  <section class="filters glass">
+    <div class="filter-group">
+      <label for="dateFrom">From</label>
+      <input id="dateFrom" type="date" [(ngModel)]="dateFrom" />
+    </div>
+    <div class="filter-group">
+      <label for="dateTo">To</label>
+      <input id="dateTo" type="date" [(ngModel)]="dateTo" />
+    </div>
+    <div class="filter-group">
+      <label for="statusFilter">Status</label>
+      <select id="statusFilter" [(ngModel)]="statusId">
+        <option value="">All</option>
+        <option value="4">Delivered</option>
+        <option value="5">Failed</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn-apply" (click)="applyFilters()">Apply</button>
+      <button class="btn-clear" (click)="clearFilters()">Clear</button>
+    </div>
+  </section>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-card glass">Loading delivery history...</div>
+
+  <!-- Error -->
+  <div *ngIf="!loading && errorMessage" class="error-card glass">{{ errorMessage }}</div>
+
+  <!-- Sort & Price Filter (visible once results load) -->
+  <section *ngIf="!loading && !errorMessage && items.length > 0" class="sort-filter-bar glass">
+    <div class="sort-group">
+      <span class="bar-label">Sort by</span>
+      <div class="sort-btn-group">
+        <button class="sort-btn" [class.active]="sortOption === 'relevance'" (click)="setSort('relevance')">Relevance</button>
+        <button class="sort-btn" [class.active]="sortOption === 'price-asc'" (click)="setSort('price-asc')">Price: Low to High</button>
+        <button class="sort-btn" [class.active]="sortOption === 'price-desc'" (click)="setSort('price-desc')">Price: High to Low</button>
+      </div>
+    </div>
+    <div class="price-group">
+      <span class="bar-label">Earnings Range (Rs)</span>
+      <div class="price-range-inputs">
+        <input type="number" class="price-input" [(ngModel)]="priceMin" placeholder="Min" min="0" />
+        <span class="price-sep">–</span>
+        <input type="number" class="price-input" [(ngModel)]="priceMax" placeholder="Max" min="0" />
+        <button class="btn-apply" (click)="applyPriceFilter()">Apply</button>
+        <button *ngIf="hasPriceFilter" class="btn-clear-price" (click)="clearPriceFilter()" title="Clear price filter">✕</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results summary -->
+  <div *ngIf="!loading && !errorMessage" class="results-summary">
+    <ng-container *ngIf="displayedItems().length < items.length; else fullCount">
+      Showing {{ displayedItems().length }} of {{ items.length }} on this page &mdash; {{ totalCount }} total
+    </ng-container>
+    <ng-template #fullCount>
+      {{ totalCount }} {{ totalCount === 1 ? 'delivery' : 'deliveries' }} found
+    </ng-template>
+  </div>
+
+  <!-- Empty state — no API results -->
+  <div *ngIf="!loading && !errorMessage && items.length === 0" class="empty-card glass">
+    <p>No deliveries found for the selected filters.</p>
+    <p class="sub">Complete your first delivery to see history here.</p>
+  </div>
+
+  <!-- Empty state — price filter hid all results -->
+  <div *ngIf="!loading && !errorMessage && items.length > 0 && displayedItems().length === 0" class="empty-card glass">
+    <p>No deliveries match the selected price range.</p>
+    <p class="sub"><button class="link-btn" (click)="clearPriceFilter()">Clear price filter</button> to show all results.</p>
+  </div>
+
+  <!-- Delivery cards -->
+  <ul *ngIf="!loading && displayedItems().length > 0" class="delivery-list">
+    <li *ngFor="let item of displayedItems()" class="delivery-card glass">
+      <div class="card-top">
+        <div class="order-id">
+          <span class="label">Order</span>
+          <span class="value">#{{ item.customOrderNumber || item.orderId }}</span>
+        </div>
+        <span class="status-badge" [class.delivered]="item.deliveryStatusId === 4" [class.failed]="item.deliveryStatusId === 5">
+          {{ item.deliveryStatus }}
+        </span>
+      </div>
+
+      <div class="card-row">
+        <span class="meta-label">Customer</span>
+        <span class="meta-value">{{ item.customerName || '—' }}</span>
+      </div>
+      <div class="card-row" *ngIf="item.deliveryAddress">
+        <span class="meta-label">Address</span>
+        <span class="meta-value">{{ item.deliveryAddress }}</span>
+      </div>
+      <div class="card-row">
+        <span class="meta-label">Earnings</span>
+        <span class="meta-value earnings">Rs {{ item.orderTotal | number:'1.0-0' }}</span>
+      </div>
+      <div class="card-row" *ngIf="item.deliveredOnUtc">
+        <span class="meta-label">Delivered</span>
+        <span class="meta-value">{{ item.deliveredOnUtc | date:'dd MMM yyyy, hh:mm a' }}</span>
+      </div>
+      <div class="card-row" *ngIf="!item.deliveredOnUtc && item.createdOnUtc">
+        <span class="meta-label">Created</span>
+        <span class="meta-value">{{ item.createdOnUtc | date:'dd MMM yyyy, hh:mm a' }}</span>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline">
+        <span class="step" [class.done]="item.assignedAtUtc" title="Assigned">Assigned</span>
+        <span class="sep">›</span>
+        <span class="step" [class.done]="item.pickedUpOnUtc" title="Picked Up">Picked Up</span>
+        <span class="sep">›</span>
+        <span class="step" [class.done]="item.inTransitOnUtc" title="In Transit">In Transit</span>
+        <span class="sep">›</span>
+        <span class="step" [class.done]="item.deliveredOnUtc" title="Delivered">Delivered</span>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Pagination -->
+  <nav *ngIf="!loading && totalPages > 1" class="pagination">
+    <button [disabled]="!hasPrev" (click)="prevPage()">← Prev</button>
+    <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+    <button [disabled]="!hasNext" (click)="nextPage()">Next →</button>
+  </nav>
+
+</section>

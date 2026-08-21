@@ -1,0 +1,128 @@
+/*
+ * Shared plugin UI theming layer.
+ * Keeps plugin pages aligned with the storefront token system.
+ */
+
+:root {
+  --plugin-card-bg: var(--surface-bg);
+  --plugin-card-muted: var(--surface-alt-bg);
+  --plugin-border: var(--border-soft);
+  --plugin-title: var(--text-primary);
+  --plugin-text: var(--text-secondary);
+  --plugin-link: var(--primary-color);
+  --plugin-link-hover: var(--primary-hover);
+  --plugin-shadow: 0 10px 28px rgba(63, 35, 122, 0.12);
+}
+
+.request-list-page .info,
+.news-item-page .comment-info .username,
+.news-date,
+.poll strong,
+.forums-header,
+.forum-table th,
+.forum-table td,
+.paypal-button-container,
+.paypal-card-container,
+.paypal-apm-container,
+.paypal-googlepay-container,
+.paypal-applepay-container {
+  border-color: var(--plugin-border);
+  background-color: var(--plugin-card-bg);
+  color: var(--plugin-text);
+}
+
+.news-items .news-item,
+.request-list-page .section,
+.forums-table-section,
+.poll,
+.paypal-card-container,
+.paypal-apm-container,
+.paypal-button-container {
+  border: 1px solid var(--plugin-border);
+  border-radius: 14px;
+  box-shadow: var(--plugin-shadow);
+  overflow: hidden;
+}
+
+.news-title,
+.request-list-page .request-title,
+.forums-table-section-title a,
+.forums-table-section-title strong {
+  color: var(--plugin-title);
+}
+
+.news-title:hover,
+.news-title:focus,
+.news-list-homepage .view-all a:hover,
+.news-list-homepage .view-all a:focus,
+.forums-table-section-title a:hover,
+.forums-table-section-title a:focus,
+.forum-search-box .advanced a:hover,
+.forum-search-box .advanced a:focus,
+.forum-table a:hover,
+.forum-table a:focus,
+.poll .buttons button:hover,
+.poll .buttons button:focus {
+  color: var(--plugin-link-hover);
+}
+
+.news-items .buttons .read-more,
+.news-item-page .new-comment .button-1,
+.poll .buttons button,
+.forums-table-section .view-all a,
+.rfq-button-2,
+.paypal-button,
+.btn_small {
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+}
+
+.news-items .buttons .read-more:hover,
+.news-items .buttons .read-more:focus,
+.news-item-page .new-comment .button-1:hover,
+.news-item-page .new-comment .button-1:focus,
+.forums-table-section .view-all a:hover,
+.forums-table-section .view-all a:focus,
+.rfq-button-2:hover,
+.rfq-button-2:focus,
+.paypal-button:hover,
+.btn_small:hover {
+  background: var(--primary-gradient-hover);
+}
+
+.paypal-messages-container,
+.divider span,
+.poll-total-votes,
+.news-item-page .comment-time,
+.news-item-page .comment-title,
+.news-item-page .comment-time span {
+  color: var(--plugin-text);
+}
+
+.card_field,
+.card_field_50,
+.card_field_75,
+input[type="number"] {
+  border-color: var(--plugin-border);
+  background-color: var(--plugin-card-bg);
+  color: var(--plugin-text);
+}
+
+.divider::before,
+.divider::after {
+  background-color: var(--plugin-border);
+}
+
+@media (max-width: 768px) {
+  .news-items .news-item,
+  .request-list-page .section,
+  .forums-table-section,
+  .poll,
+  .paypal-card-container,
+  .paypal-apm-container,
+  .paypal-button-container {
+    border-radius: 12px;
+  }
+}

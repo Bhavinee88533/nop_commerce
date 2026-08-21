@@ -1,0 +1,43 @@
+<section class="onboarding-page">
+  <div class="onboarding-surface">
+    <header class="surface-header">
+      <p class="eyebrow">Rider Program</p>
+      <h1>Become a Rider</h1>
+      <p>
+        Convert your customer account into a rider profile in one step.
+        You can update status and availability anytime from your dashboard.
+      </p>
+    </header>
+
+    <form class="onboarding-form" (ngSubmit)="submit()">
+      <label>
+        <span>Vehicle Type</span>
+        <select [(ngModel)]="vehicleType" name="vehicleType">
+          <option>Bike</option>
+          <option>Scooter</option>
+          <option>Car</option>
+          <option>Van</option>
+        </select>
+      </label>
+
+      <label>
+        <span>License Number</span>
+        <input type="text" name="licenseNumber" [(ngModel)]="licenseNumber" placeholder="Enter government license number" />
+      </label>
+
+      <label>
+        <span>Current Location</span>
+        <input type="text" name="currentLocation" [(ngModel)]="currentLocation" placeholder="Ex: Kondapur, Hyderabad" />
+      </label>
+
+      <label class="switch-line">
+        <input type="checkbox" name="availability" [(ngModel)]="availability" />
+        <span>Set me available for delivery assignments</span>
+      </label>
+
+      <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+      <button type="submit" [disabled]="loading">{{ loading ? 'Creating rider profile...' : 'Become a Rider' }}</button>
+    </form>
+  </div>
+</section>

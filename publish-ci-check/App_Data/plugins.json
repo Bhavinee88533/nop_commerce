@@ -1,0 +1,18 @@
+﻿{
+  "InstalledPluginNames": [
+    "Obsolete field, using only for compatibility"
+  ],
+  "InstalledPlugins": [
+    {
+      "SystemName": "Misc.OtpLogin",
+      "Version": "1.0.0"
+    },
+    {
+      "SystemName": "ExternalAuth.Google",
+      "Version": "1.0.0"
+    }
+  ],
+  "PluginNamesToUninstall": [],
+  "PluginNamesToDelete": [],
+  "PluginNamesToInstall": []
+}

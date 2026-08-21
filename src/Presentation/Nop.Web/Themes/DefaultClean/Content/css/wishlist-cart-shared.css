@@ -1,0 +1,149 @@
+.item-box button:disabled,
+.item-box .button-1:disabled,
+.item-box .button-2:disabled,
+.item-box button.disabled,
+.item-box .button-1.disabled,
+.item-box .button-2.disabled,
+.item-box a.button-1.disabled,
+.item-box a.button-2.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.item-box .qty-control {
+  display: inline-flex;
+  align-items: center;
+  width: 60%;
+  height: 40px;
+  border: 2px solid var(--accent-blue-color);
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.item-box .qty-control .qty-btn {
+  width: 34px;
+  height: 100%;
+  flex-shrink: 0;
+  background-color: var(--accent-blue-color);
+  color: var(--surface-bg);
+  font-size: 18px;
+  line-height: 1;
+  border: none;
+}
+
+.item-box .qty-control .qty-btn:hover {
+  background-color: var(--accent-blue-active-color);
+}
+
+.item-box .qty-control .qty-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.item-box .qty-control .qty-display {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.item-box .add-to-wishlist-button:disabled,
+.item-box .add-to-compare-list-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.overview .product-quantity,
+.variant-overview .product-quantity {
+  display: flex;
+  align-items: center;
+}
+
+.overview .product-quantity .quantity,
+.variant-overview .product-quantity .quantity {
+  width: 24px;
+  height: 43px;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface-alt-bg);
+  cursor: pointer;
+  position: relative;
+}
+
+.overview .product-quantity .quantity.up::before,
+.variant-overview .product-quantity .quantity.up::before,
+.overview .product-quantity .quantity.down::before,
+.variant-overview .product-quantity .quantity.down::before,
+.overview .product-quantity .quantity.up::after,
+.variant-overview .product-quantity .quantity.up::after {
+  content: "";
+  position: absolute;
+  background-color: var(--dark-gray-color);
+}
+
+.overview .product-quantity .quantity.up::before,
+.variant-overview .product-quantity .quantity.up::before,
+.overview .product-quantity .quantity.down::before,
+.variant-overview .product-quantity .quantity.down::before {
+  width: 10px;
+  height: 2px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.overview .product-quantity .quantity.up::after,
+.variant-overview .product-quantity .quantity.up::after {
+  width: 2px;
+  height: 10px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.overview .details-entered-qty,
+.variant-overview .details-entered-qty {
+  display: none;
+}
+
+.overview .details-qty-control,
+.variant-overview .details-qty-control {
+  display: inline-flex;
+  align-items: center;
+  height: 43px;
+  border: 2px solid var(--accent-blue-color);
+  vertical-align: middle;
+}
+
+.overview .details-qty-control .qty-btn,
+.variant-overview .details-qty-control .qty-btn {
+  width: 34px;
+  height: 100%;
+  border: none;
+  background-color: var(--accent-blue-color);
+  color: var(--surface-bg);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.overview .details-qty-control .qty-btn:hover,
+.variant-overview .details-qty-control .qty-btn:hover {
+  background-color: var(--accent-blue-active-color);
+}
+
+.overview .details-qty-control .qty-btn:disabled,
+.variant-overview .details-qty-control .qty-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.overview .details-qty-control .qty-display,
+.variant-overview .details-qty-control .qty-display {
+  min-width: 52px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--dark-gray-color);
+}

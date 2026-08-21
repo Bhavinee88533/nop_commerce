@@ -1,0 +1,67 @@
+<section class="accepted-page" *ngIf="!loading; else loadingTpl">
+  <main class="accepted-main">
+    <header class="glass accepted-header">
+      <div>
+        <p class="eyebrow">Accepted Orders</p>
+        <h1>Your Accepted Deliveries</h1>
+        <p class="sub">Update delivery status or open order details below.</p>
+      </div>
+      <button class="ghost-btn" (click)="backToDashboard()">Back To Dashboard</button>
+    </header>
+
+    <article class="glass panel" *ngIf="activeDeliveries.length > 0">
+      <h2>Active Orders</h2>
+      <p class="muted">Total active orders: {{ activeDeliveries.length }}</p>
+      <div class="order-list">
+        <div class="order-row" *ngFor="let delivery of activeDeliveries">
+          <div class="order-info">
+            <div class="order-title">Order #{{ delivery.orderId }}</div>
+            <span class="status-badge" [ngClass]="getStatusClass(delivery.deliveryStatusId)">{{ delivery.deliveryStatus }}</span>
+            <div class="order-customer" *ngIf="delivery.customerName">{{ delivery.customerName }}</div>
+            <div class="order-state" *ngIf="delivery.orderId === selectedOrderId">Selected for Active Delivery</div>
+          </div>
+          <div class="order-actions">
+            <ng-container *ngIf="getNextAction(delivery) as action">
+              <button
+                class="action-btn"
+                [disabled]="statusUpdating"
+                (click)="promptStatusUpdate(delivery, action)"
+                [attr.aria-label]="'Update order ' + delivery.orderId + ' to ' + action.label">
+                {{ action.label }}
+              </button>
+            </ng-container>
+            <button class="choose-btn" [class.selected]="delivery.orderId === selectedOrderId" (click)="chooseOrder(delivery.orderId)">
+              {{ delivery.orderId === selectedOrderId ? 'Selected' : 'Set Active' }}
+            </button>
+            <button class="view-btn" (click)="openOrderDetails(delivery.orderId)">Details</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="glass panel" *ngIf="activeDeliveries.length === 0">
+      <h2>No Active Orders</h2>
+      <p class="muted">No active accepted orders are available right now.</p>
+      <button class="ghost-btn" (click)="backToDashboard()">Return To Dashboard</button>
+    </article>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </main>
+</section>
+
+<!-- Confirmation modal -->
+<div class="confirm-overlay" *ngIf="confirming" role="dialog" aria-modal="true">
+  <div class="confirm-card">
+    <p class="confirm-message">{{ confirming.message }}</p>
+    <div class="confirm-actions">
+      <button type="button" class="confirm-yes" (click)="confirmStatusUpdate()" aria-label="Confirm status update">Yes, confirm</button>
+      <button type="button" class="confirm-no" (click)="cancelStatusUpdate()" aria-label="Cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <section class="accepted-loading">
+    <div class="loader-card">Loading accepted orders...</div>
+  </section>
+</ng-template>

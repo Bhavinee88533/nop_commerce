@@ -1,0 +1,11 @@
+{
+  "Group": "Misc",
+  "FriendlyName": "Search Bot (NLP)",
+  "SystemName": "Misc.SearchBot",
+  "Version": "1.00",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Team 7",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Misc.SearchBot.dll",
+  "Description": "Natural-language product search using OpenAI. Powers the storefront chat bot widget."
+}

@@ -1,0 +1,388 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Login with OTP</title>
+    <link rel="stylesheet" href="/otp/theme.css?v=1" />
+</head>
+<body>
+    <main class="otp-card">
+        <div class="logo-wrap">
+            <div class="logo">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+            </div>
+        </div>
+        <h1>Login with OTP</h1>
+        <p class="subtitle">We'll send a 6-digit code to your mobile or email.</p>
+
+        <div class="mode-toggle" role="tablist">
+            <button type="button" id="modeMobile" class="active" role="tab">Mobile</button>
+            <button type="button" id="modeEmail" role="tab">Email</button>
+            <button type="button" id="modeAdmin" class="admin-tab" role="tab">Admin</button>
+        </div>
+
+        <form id="otpForm" novalidate>
+            <div id="mobileSection">
+                <label for="mobile">Mobile number</label>
+                <div class="row field">
+                    <select id="countryCode" class="country-code" aria-label="Country code"></select>
+                    <input id="mobile" type="tel" inputmode="numeric" autocomplete="tel-national"
+                           placeholder="Enter mobile number" maxlength="15" />
+                </div>
+                <div id="mobileError" class="error-msg"></div>
+            </div>
+
+            <div id="emailSection" style="display:none;">
+                <label for="email">Email address</label>
+                <input id="email" type="email" autocomplete="email" placeholder="you@example.com" />
+                <div id="emailError" class="error-msg"></div>
+            </div>
+
+            <div id="serverMsg" class="server-msg"></div>
+
+            <button type="submit" id="requestOtpBtn" class="primary" disabled>Request OTP</button>
+            <a class="back-link" href="/login">&larr; Back to standard login</a>
+        </form>
+
+        <!-- Admin login form (separate, hidden by default) -->
+        <form id="adminForm" novalidate style="display:none;">
+            <div class="admin-badge">&#128274; Administrator access only</div>
+            <div class="field">
+                <label for="adminEmail">Admin email</label>
+                <input type="email" class="admin-focus" id="adminEmail" autocomplete="username" placeholder="admin@example.com" />
+                <div class="error-msg" id="adminEmailError"></div>
+            </div>
+            <div class="field" style="margin-top:12px;">
+                <label for="adminPassword">Password</label>
+                <input type="password" class="admin-focus" id="adminPassword" autocomplete="current-password" placeholder="Enter password" />
+                <div class="error-msg" id="adminPasswordError"></div>
+            </div>
+            <div id="adminServerMsg" class="server-msg"></div>
+            <button type="submit" id="adminLoginBtn" class="primary admin-btn" disabled>Sign in as Admin</button>
+        </form>
+    </main>
+
+    <script>
+        (function () {
+            var countries = [
+                { code: '+91',  iso: 'IN', min: 10, max: 10 },
+                { code: '+1',   iso: 'US', min: 10, max: 10 },
+                { code: '+44',  iso: 'GB', min: 10, max: 10 },
+                { code: '+61',  iso: 'AU', min: 9,  max: 9  },
+                { code: '+971', iso: 'AE', min: 8,  max: 9  },
+                { code: '+65',  iso: 'SG', min: 8,  max: 8  },
+                { code: '+81',  iso: 'JP', min: 10, max: 11 },
+                { code: '+49',  iso: 'DE', min: 10, max: 11 },
+                { code: '+33',  iso: 'FR', min: 9,  max: 9  },
+                { code: '+86',  iso: 'CN', min: 11, max: 11 }
+            ];
+            var ccSelect = document.getElementById('countryCode');
+            countries.forEach(function (c) {
+                var opt = document.createElement('option');
+                opt.value = c.code; opt.dataset.min = c.min; opt.dataset.max = c.max;
+                opt.textContent = c.iso + ' (' + c.code + ')';
+                if (c.code === '+91') opt.selected = true;
+                ccSelect.appendChild(opt);
+            });
+
+            var mode = 'mobile';
+            var modeMobileBtn = document.getElementById('modeMobile');
+            var modeEmailBtn  = document.getElementById('modeEmail');
+            var modeAdminBtn  = document.getElementById('modeAdmin');
+            var mobileSection = document.getElementById('mobileSection');
+            var emailSection  = document.getElementById('emailSection');
+            var mobileInput   = document.getElementById('mobile');
+            var emailInput    = document.getElementById('email');
+            var mobileError   = document.getElementById('mobileError');
+            var emailError    = document.getElementById('emailError');
+            var serverMsg     = document.getElementById('serverMsg');
+            var submitBtn     = document.getElementById('requestOtpBtn');
+            var form          = document.getElementById('otpForm');
+            var adminForm     = document.getElementById('adminForm');
+
+            function setMode(next) {
+                if (mode === next) return;
+                mode = next;
+                modeMobileBtn.classList.toggle('active', next === 'mobile');
+                modeEmailBtn.classList.toggle('active', next === 'email');
+                modeAdminBtn.classList.toggle('active', next === 'admin');
+                mobileSection.style.display = next === 'mobile' ? '' : 'none';
+                emailSection.style.display  = next === 'email'  ? '' : 'none';
+                form.style.display      = next !== 'admin' ? '' : 'none';
+                adminForm.style.display = next === 'admin' ? '' : 'none';
+                clearServerMsg(); validate();
+
+                // Save selected method to localStorage
+                if (next === 'mobile' || next === 'email') {
+                    try {
+                        localStorage.setItem('nop_last_login_method', next);
+                    } catch (e) {}
+                }
+
+                if (next === 'admin') {
+                    document.getElementById('adminEmail').focus();
+                    validateAdmin();
+                }
+            }
+            modeMobileBtn.addEventListener('click', function () { setMode('mobile'); });
+            modeEmailBtn .addEventListener('click', function () { setMode('email');  });
+            modeAdminBtn .addEventListener('click', function () { setMode('admin');  });
+
+            function clearServerMsg() { serverMsg.textContent = ''; serverMsg.className = 'server-msg'; }
+
+            function validateMobile() {
+                var val = (mobileInput.value || '').trim();
+                var cc  = ccSelect.value; // e.g. '+91'
+                var opt = ccSelect.options[ccSelect.selectedIndex];
+                var min = parseInt(opt.dataset.min, 10) || 6;
+                var max = parseInt(opt.dataset.max, 10) || 15;
+
+                if (!val) return 'Mobile number is required.';
+                if (!/^\d+$/.test(val)) return 'Please enter a valid mobile number.';
+
+                // India (+91): exactly 10 digits, must start with 6, 7, 8, or 9
+                if (cc === '+91') {
+                    if (val.length !== 10 || !/^[6789]/.test(val))
+                        return 'Please enter a valid mobile number.';
+                } else {
+                    if (val.length < min || val.length > max)
+                        return 'Please enter a valid mobile number.';
+                }
+                return '';
+            }
+            function validateEmail() {
+                var val = (emailInput.value || '').trim();
+                if (!val) return 'Email is required.';
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val)) return 'Please enter a valid email address.';
+                if (val.length > 254) return 'Email is too long.';
+                return '';
+            }
+            function validate() {
+                var ok = false;
+                if (mode === 'mobile') {
+                    var e = validateMobile();
+                    mobileError.textContent = mobileInput.dataset.touched ? e : '';
+                    ok = !e;
+                } else {
+                    var e2 = validateEmail();
+                    emailError.textContent = emailInput.dataset.touched ? e2 : '';
+                    ok = !e2;
+                }
+                submitBtn.disabled = !ok;
+                return ok;
+            }
+            mobileInput.addEventListener('input', function () { mobileInput.dataset.touched = '1'; validate(); });
+            mobileInput.addEventListener('blur',  function () { mobileInput.dataset.touched = '1'; validate(); });
+            ccSelect.addEventListener('change', validate);
+            emailInput.addEventListener('input', function () { emailInput.dataset.touched = '1'; validate(); });
+            emailInput.addEventListener('blur',  function () { emailInput.dataset.touched = '1'; validate(); });
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                clearServerMsg();
+                mobileInput.dataset.touched = '1';
+                emailInput.dataset.touched  = '1';
+                if (!validate()) return;
+
+                var payload, destDisplay;
+                if (mode === 'mobile') {
+                    payload = { type: 'mobile', countryCode: ccSelect.value, mobile: mobileInput.value.trim() };
+                    destDisplay = payload.countryCode + ' ' + payload.mobile;
+                } else {
+                    payload = { type: 'email', email: emailInput.value.trim() };
+                    destDisplay = payload.email;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending OTP...';
+                var t0 = performance.now();
+
+                fetch('/otp/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(function (res) { return res.json().then(function (b) { return { res: res, body: b }; }); })
+                  .then(function (r) {
+                      var elapsedMs = Math.round(performance.now() - t0);
+                      if (!r.res.ok || !r.body || !r.body.ok) {
+                          submitBtn.disabled = false;
+                          submitBtn.textContent = 'Request OTP';
+                          serverMsg.className = 'server-msg error';
+                          serverMsg.textContent = (r.body && r.body.error) || 'Failed to send OTP. Please try again.';
+                          return;
+                      }
+                      var b = r.body;
+                      var session = {
+                          sessionId: b.sessionId,
+                          destination: b.destination || destDisplay,
+                          type: payload.type,
+                          expiresAt: Date.now() + (b.expiresInSeconds * 1000),
+                          nextResendAvailableAt: Date.now() + (b.resendAvailableInSeconds * 1000),
+                          maxResends: b.maxResends,
+                          resendCount: 0,
+                          deliveryStatus: b.deliveryStatus
+                      };
+                      try { localStorage.setItem('nop_otp_session', JSON.stringify(session)); } catch (e) {}
+
+                      var status = b.deliveryStatus;
+                      var html = '';
+                      if (status === 'sent') {
+                          serverMsg.className = 'server-msg success';
+                          html = '&#10003; OTP sent to <strong>' + session.destination + '</strong>.<br>' +
+                                 '<small>Please check your inbox (and spam folder).</small>';
+                      } else if (status === 'queued') {
+                          serverMsg.className = 'server-msg success';
+                          html = '&#10003; OTP sent to <strong>' + session.destination + '</strong>.';
+                      } else {
+                          // demo or failed — show generic success, OTP is in server logs only
+                          serverMsg.className = 'server-msg success';
+                          html = '&#10003; OTP sent to <strong>' + session.destination + '</strong>.';
+                      }
+                      serverMsg.innerHTML = html;
+
+                      var delay = 1100;
+                      setTimeout(function () {
+                          window.location.href = '/otp/verify-page?sid=' + encodeURIComponent(b.sessionId) + '&v=' + Date.now();
+                      }, delay);
+                  })
+                  .catch(function () {
+                      submitBtn.disabled = false;
+                      submitBtn.textContent = 'Request OTP';
+                      serverMsg.className = 'server-msg error';
+                      serverMsg.textContent = 'Network error. Please try again.';
+                  });
+            });
+
+            // ---- Admin login ----
+            var adminEmailInput    = document.getElementById('adminEmail');
+            var adminPasswordInput = document.getElementById('adminPassword');
+            var adminEmailError    = document.getElementById('adminEmailError');
+            var adminPasswordError = document.getElementById('adminPasswordError');
+            var adminServerMsg     = document.getElementById('adminServerMsg');
+            var adminLoginBtn      = document.getElementById('adminLoginBtn');
+
+            function validateAdmin() {
+                var emailVal = (adminEmailInput.value || '').trim();
+                var pwdVal   = (adminPasswordInput.value || '').trim();
+                var emailOk  = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailVal);
+                adminEmailError.textContent    = adminEmailInput.dataset.touched    ? (emailOk ? '' : 'Valid email is required.') : '';
+                adminPasswordError.textContent = adminPasswordInput.dataset.touched ? (pwdVal  ? '' : 'Password is required.')    : '';
+                adminLoginBtn.disabled = !(emailOk && pwdVal);
+            }
+            adminEmailInput.addEventListener('input', function () { adminEmailInput.dataset.touched = '1'; validateAdmin(); });
+            adminEmailInput.addEventListener('blur',  function () { adminEmailInput.dataset.touched = '1'; validateAdmin(); });
+            adminPasswordInput.addEventListener('input', function () { adminPasswordInput.dataset.touched = '1'; validateAdmin(); });
+            adminPasswordInput.addEventListener('blur',  function () { adminPasswordInput.dataset.touched = '1'; validateAdmin(); });
+
+            adminForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                adminEmailInput.dataset.touched    = '1';
+                adminPasswordInput.dataset.touched = '1';
+                validateAdmin();
+                if (adminLoginBtn.disabled) return;
+
+                adminServerMsg.className = 'server-msg';
+                adminServerMsg.textContent = '';
+                adminLoginBtn.disabled = true;
+                adminLoginBtn.textContent = 'Signing in...';
+
+                fetch('/otp/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ email: adminEmailInput.value.trim(), password: adminPasswordInput.value })
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (b) {
+                    if (b.ok) {
+                        adminServerMsg.className = 'server-msg success';
+                        adminServerMsg.textContent = 'Login successful! Redirecting to admin panel...';
+                        setTimeout(function () { window.location.href = b.redirectUrl || '/Admin/'; }, 800);
+                    } else {
+                        adminLoginBtn.disabled = false;
+                        adminLoginBtn.textContent = 'Sign in as Admin';
+                        adminServerMsg.className = 'server-msg error';
+                        adminServerMsg.textContent = b.error || 'Login failed. Please try again.';
+                    }
+                })
+                .catch(function () {
+                    adminLoginBtn.disabled = false;
+                    adminLoginBtn.textContent = 'Sign in as Admin';
+                    adminServerMsg.className = 'server-msg error';
+                    adminServerMsg.textContent = 'Network error. Please try again.';
+                });
+            });
+
+            // ---- Focus trap: clicking non-interactive areas returns focus to the active input ----
+            function focusActiveInput() {
+                if (mode === 'mobile')      mobileInput.focus();
+                else if (mode === 'email')  emailInput.focus();
+                else if (mode === 'admin')  adminEmailInput.focus();
+            }
+
+            var INTERACTIVE_TAGS = ['INPUT', 'SELECT', 'BUTTON', 'A', 'TEXTAREA', 'OPTION'];
+            document.querySelector('.otp-card').addEventListener('mousedown', function (e) {
+                if (INTERACTIVE_TAGS.indexOf(e.target.tagName) !== -1) return;
+                e.preventDefault(); // stops browser from moving text caret to clicked element
+                focusActiveInput();
+            });
+
+            // ---- Restore last used login method on page load ----
+            function loadDefaultLoginMethod() {
+                // First, try to fetch from server
+                fetch('/otp/default-method', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (b) {
+                    if (b && b.ok && b.rememberChoice) {
+                        // Check localStorage for last used method
+                        var lastMethod = null;
+                        try {
+                            lastMethod = localStorage.getItem('nop_last_login_method');
+                        } catch (e) {}
+
+                        // Use last method if available, otherwise use default from server
+                        var methodToUse = lastMethod || b.defaultMethod || 'email';
+
+                        // Normalize method name
+                        if (methodToUse === 'OtpMobile' || methodToUse === 'mobile') {
+                            setMode('mobile');
+                        } else if (methodToUse === 'OtpEmail' || methodToUse === 'email') {
+                            setMode('email');
+                        }
+                    }
+                })
+                .catch(function () {
+                    // If server call fails, try localStorage
+                    try {
+                        var lastMethod = localStorage.getItem('nop_last_login_method');
+                        if (lastMethod) {
+                            if (lastMethod === 'OtpMobile' || lastMethod === 'mobile') {
+                                setMode('mobile');
+                            } else if (lastMethod === 'OtpEmail' || lastMethod === 'email') {
+                                setMode('email');
+                            }
+                        }
+                    } catch (e) {}
+                })
+                .finally(function () {
+                    // Auto-focus active input after setting mode
+                    focusActiveInput();
+                    validate();
+                });
+            }
+
+            // Load default method on page load
+            loadDefaultLoginMethod();
+        })();
+    </script>
+</body>
+</html>

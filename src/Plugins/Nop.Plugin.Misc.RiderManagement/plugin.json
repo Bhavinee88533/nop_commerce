@@ -1,0 +1,11 @@
+{
+  "Group": "Misc",
+  "FriendlyName": "Rider Management",
+  "SystemName": "Misc.RiderManagement",
+  "Version": "1.00",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Team 7",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Misc.RiderManagement.dll",
+  "Description": "Manages riders for quick commerce delivery operations."
+}

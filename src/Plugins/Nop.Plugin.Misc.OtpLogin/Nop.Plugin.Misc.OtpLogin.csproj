@@ -1,0 +1,68 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Copyright>Copyright © Your Company</Copyright>
+    <Company>Your Company</Company>
+    <Authors>Your Company</Authors>
+    <PackageLicenseUrl></PackageLicenseUrl>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryType>Git</RepositoryType>
+    <OutputPath>$(SolutionDir)\Presentation\Nop.Web\Plugins\Misc.OtpLogin</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="plugin.json" />
+    <None Remove="Content\otp-login.html" />
+    <None Remove="Content\otp-verify.html" />
+    <None Remove="Content\otp-register.html" />
+    <None Remove="Content\otp-theme.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="plugin.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\otp-login.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\otp-verify.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\otp-register.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\otp-theme.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
+    <ClearPluginAssemblies Include="$(SolutionDir)\Build\ClearPluginAssemblies.proj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.16.0" />
+  </ItemGroup>
+
+  <Target Name="NopTarget" AfterTargets="Build">
+    <MSBuild Projects="@(ClearPluginAssemblies)" Properties="PluginPath=$(OutDir)" Targets="NopClear" />
+  </Target>
+
+  <!-- Re-copy MailKit and its dependencies after NopClear removes them.
+       Uses Path.Combine so it works on both Windows ($(NuGetPackageRoot) ends with '\')
+       and Linux CI ($(NuGetPackageRoot) ends without a trailing '/'). -->
+  <Target Name="CopyMailKitDeps" AfterTargets="NopTarget">
+    <ItemGroup>
+      <MailKitFiles Include="$([System.IO.Path]::Combine('$(NuGetPackageRoot)', 'mailkit', '4.16.0', 'lib', 'net8.0', 'MailKit.dll'))" />
+      <MailKitFiles Include="$([System.IO.Path]::Combine('$(NuGetPackageRoot)', 'mimekit', '4.16.0', 'lib', 'net8.0', 'MimeKit.dll'))" />
+      <MailKitFiles Include="$([System.IO.Path]::Combine('$(NuGetPackageRoot)', 'bouncycastle.cryptography', '2.6.2', 'lib', 'netstandard2.0', 'BouncyCastle.Cryptography.dll'))" />
+    </ItemGroup>
+    <Copy SourceFiles="@(MailKitFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
